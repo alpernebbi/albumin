@@ -10,7 +10,7 @@ class TestUtils(TestCase):
     @with_temp_folder
     @from_tar('repo-empty.tar.gz')
     def test_make_tar_file(self, cwd):
-        with tempfile.TemporaryFile() as tar_file:
+        with tempfile.NamedTemporaryFile(suffix='.tar.gz') as tar_file:
             make_tar(tar_file, cwd)
 
     @with_temp_folder
