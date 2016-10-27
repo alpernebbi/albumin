@@ -11,7 +11,7 @@ def make_tar(tar_file, dir_path):
 
 @make_tar.register(str)
 def _(tar_file, dir_path):
-    if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
+    if not os.path.isdir(dir_path):
         raise ValueError("Folder {} doesn't exist.".format(dir_path))
     with tarfile.open(tar_file, mode='w:gz') as tar:
         tar.add(dir_path, arcname='')
