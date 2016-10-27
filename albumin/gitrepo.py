@@ -2,6 +2,8 @@ import functools
 import subprocess
 import os
 
+from albumin.utils import files_in
+
 
 class GitRepo:
     def __init__(self, path):
@@ -66,11 +68,18 @@ class GitRepo:
         if pop: command.append('pop')
         return self._git(*command)
 
-    def move(self, src, dest, overwrite=False):
+    def move(self, src, dest, overwrite=False, merge=True):
         abs_src = os.path.join(self.path, src)
         abs_dest = os.path.join(self.path, dest)
 
-        if os.path.isfile(abs_dest):
+        if os.path.isdir(abs_src) and os.path.isdir(abs_dest) and merge:
+            for src_ in files_in(abs_src, relative=self.path):
+                dest_ = os.path.join(dest, os.path.relpath(src_, src))
+                dest_dir = os.path.dirname(dest_)
+                abs_dest_dir = os.path.join(self.path, dest_dir)
+                os.makedirs(abs_dest_dir, exist_ok=True)
+                self.move(src_, dest_, overwrite=overwrite)
+        elif os.path.isfile(abs_dest):
             if overwrite:
                 self._git('rm', dest)
                 self._git('mv', src, dest)
