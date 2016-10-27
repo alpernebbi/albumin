@@ -3,6 +3,14 @@ import tarfile
 import functools
 
 
+def files_in(dir_path, relative=False):
+    for root, dirs, files in os.walk(dir_path):
+        if relative:
+            root = os.path.relpath(root, start=relative)
+        for f in files:
+            yield os.path.join(root, f)
+
+
 @functools.singledispatch
 def make_tar(tar_file, dir_path):
     with tarfile.open(fileobj=tar_file, mode='w:gz') as tar:
