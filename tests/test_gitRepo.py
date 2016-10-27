@@ -3,7 +3,7 @@ import tempfile
 import functools
 import tarfile
 
-from gitrepo import GitRepo
+from albumin.gitrepo import GitRepo
 
 
 def with_temp_repo(func):
