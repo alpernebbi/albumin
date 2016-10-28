@@ -91,11 +91,13 @@ class GitRepo:
         else:
             self._git('mv', src, dest)
 
-
     @property
     def tree_hash(self):
         commit = self._git('cat-file', 'commit', 'HEAD').split()
         return commit[commit.index('tree') + 1]
+
+    def __repr__(self):
+        return 'GitRepo(path={!r})'.format(self.path)
 
 
 class GitAnnexRepo(GitRepo):
@@ -109,6 +111,9 @@ class GitAnnexRepo(GitRepo):
         repo.annex = GitAnnex(repo)
         repo.annex.meta = GitAnnexRepoMetadata(repo)
         repo.__class__ = cls
+
+    def __repr__(self):
+        return 'GitAnnexRepo(path={!r})'.format(self.path)
 
 
 class GitAnnex:
@@ -142,6 +147,9 @@ class GitAnnex:
         jsons = self._annex('metadata', '--json').splitlines()
         meta_list = [json.loads(json_) for json_ in jsons]
         return {meta['file']: meta['key'] for meta in meta_list}
+
+    def __repr__(self):
+        return 'GitAnnex(repo={!r})'.format(self.repo)
 
 
 class GitAnnexRepoMetadata(collections.abc.Mapping):
@@ -195,10 +203,15 @@ class GitAnnexRepoMetadata(collections.abc.Mapping):
     def __len__(self):
         return len(self.repo.annex.keys)
 
+    def __repr__(self):
+        repr_ = 'GitAnnexRepoMetadata(repo={!r})'
+        return repr_.format(self.repo)
+
 
 class GitAnnexFileMetadata(collections.abc.MutableMapping):
     def __init__(self, repo_meta, key):
         self.key = key
+        self._path = repo_meta.repo.path
         self._query = functools.partial(repo_meta._query, key=self.key)
 
     def __getitem__(self, meta_key):
@@ -233,3 +246,7 @@ class GitAnnexFileMetadata(collections.abc.MutableMapping):
 
     def __len__(self):
         return len([x for x in self])
+
+    def __repr__(self):
+        repr_ = 'GitAnnexFileMetadata(key={!r}, path={!r})'
+        return repr_.format(self.key, self._path)
