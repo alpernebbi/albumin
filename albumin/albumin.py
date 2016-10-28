@@ -23,10 +23,11 @@ def argument_parser():
 
 def main():
     parser = argument_parser()
-    args = parser.parse_args()
+    namespace = parser.parse_args()
+    kwargs = vars(namespace)
 
-    if args.import_path:
-        import_(**vars(args))
+    if kwargs['import_path']:
+        import_(**kwargs)
 
 
 def import_(repo_path, import_path, **kwargs):
