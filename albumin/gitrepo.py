@@ -1,6 +1,7 @@
 import functools
 import subprocess
 import os
+import json
 
 from albumin.utils import files_in
 
@@ -100,10 +101,12 @@ class GitAnnexRepo(GitRepo):
     def __init__(self, path):
         super().__init__(path)
         self.annex = GitAnnex(self)
+        self.annex.meta = GitAnnexRepoMetadata(self)
 
     @classmethod
     def make_annex(cls, repo):
         repo.annex = GitAnnex(repo)
+        repo.annex.meta = GitAnnexRepoMetadata(repo)
         repo.__class__ = cls
 
 
@@ -126,3 +129,33 @@ class GitAnnex:
 
     def locate(self, key):
         return self._annex('contentlocation', key).rstrip()
+
+
+class GitAnnexRepoMetadata:
+    def __init__(self, repo):
+        self.repo = repo
+        self._program = None
+        self._start()
+
+    def _start(self):
+        self._program = subprocess.Popen(
+            ["git", "annex", "metadata", "--batch", "--json"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            cwd=self.repo.path,
+        )
+
+    def _query(self, **query):
+        json_ = json.dumps(query)
+        print(json_, file=self._program.stdin, flush=True)
+        response = self._program.stdout.readline()
+        return json.loads(response)
+
+    @property
+    def _running(self):
+        return self._program and self._program.poll() is None
+
+    def _stop(self, kill=False):
+        return self._program.terminate()
