@@ -23,7 +23,7 @@ def from_exif(*file_paths):
     with ExifTool() as tool:
         tags_list = tool.get_tags_batch(exiftool_tags, file_paths)
 
-    maps = {tag: {} for tag in exiftool_tags}
+    maps = {tag: {0: tag.split(':')[-1]} for tag in exiftool_tags}
     for tags in tags_list:
         for tag in tags:
             file = tags['SourceFile']
@@ -31,12 +31,10 @@ def from_exif(*file_paths):
 
             try:
                 dt = datetime.strptime(datetime_, '%Y:%m:%d %H:%M:%S')
+                data = ImageDate(tag.split(':')[-1], dt)
+                maps[tag][file] = data
             except ValueError:
                 continue
-
-            method = tag.split(':')[-1]
-            data = ImageDate(method, dt)
-            maps[tag][file] = data
 
     ordered_maps = [maps[tag] for tag in exiftool_tags]
     return ChainMap(*ordered_maps)
