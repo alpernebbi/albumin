@@ -31,8 +31,8 @@ class TestImageDates(TestCase):
         a000 = os.path.join(temp_folder, 'A000.jpg')
         assert os.path.isfile(a000)
 
-        a000t = next(from_exif(a000))
-        assert a000t.path == a000
+        results = from_exif(a000)
+        a000t = results[a000]
         assert a000t.method == 'DateTimeOriginal'
         assert a000t.datetime == datetime(2015, 5, 16, 14, 4, 29)
 
