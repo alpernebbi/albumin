@@ -1,9 +1,12 @@
 from exiftool import ExifTool
 from datetime import datetime
+from collections import namedtuple
 
 
 def analyze_date(file_path):
     raise NotImplementedError
+
+ImageDate = namedtuple('ImageDate', ['path', 'method', 'datetime'])
 
 
 def from_exif(*file_paths):
@@ -19,8 +22,9 @@ def from_exif(*file_paths):
         datetime_ = tags[tag]
 
         try:
-            t = datetime.strptime(datetime_, '%Y:%m:%d %H:%M:%S')
-            yield (file, tag, t)
+            dt = datetime.strptime(datetime_, '%Y:%m:%d %H:%M:%S')
+            tag = tag.split(':')[-1]
+            yield ImageDate(file, tag, dt)
         except ValueError:
             pass
 

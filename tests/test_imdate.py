@@ -30,6 +30,7 @@ class TestImageDates(TestCase):
         a000 = os.path.join(temp_folder, 'A000.jpg')
         assert os.path.isfile(a000)
 
-        a000t = [*from_exif(a000)][0]
-        dt = datetime(2015, 5, 16, 14, 4, 29)
-        assert a000t == (a000, 'EXIF:DateTimeOriginal', dt)
+        a000t = next(from_exif(a000))
+        assert a000t.path == a000
+        assert a000t.method == 'DateTimeOriginal'
+        assert a000t.datetime == datetime(2015, 5, 16, 14, 4, 29)
