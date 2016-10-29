@@ -22,11 +22,9 @@ def import_(repo_path, import_path, **kwargs):
 
 
 def analyze(analyze_path, **kwargs):
-    try:
-        results = analyze_date(*files_in(analyze_path))
-    except NotImplementedError as err:
-        print(err)
-        return
+    results, error = analyze_date(*files_in(analyze_path))
+    if error:
+        print(error)
 
     for map_ in results.maps:
         del map_[0]

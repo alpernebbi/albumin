@@ -9,11 +9,11 @@ def analyze_date(*file_paths):
     remaining = [f for f in file_paths if f not in results]
 
     if remaining:
-        raise NotImplementedError(
+        return results, NotImplementedError(
             "No datetime information found about some files:\n" \
             + ("    {}\n" * len(remaining)).format(*remaining)
         )
-    return results
+    return results, None
 
 
 ImageDate = namedtuple('ImageDate', ['method', 'datetime'])
