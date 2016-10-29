@@ -6,6 +6,7 @@ from datetime import datetime
 from albumin.imdate import exiftool_generator
 from albumin.imdate import exiftool_tags
 from albumin.imdate import from_exif
+from albumin.imdate import analyze_date
 
 
 class TestImageDates(TestCase):
@@ -34,3 +35,12 @@ class TestImageDates(TestCase):
         assert a000t.path == a000
         assert a000t.method == 'DateTimeOriginal'
         assert a000t.datetime == datetime(2015, 5, 16, 14, 4, 29)
+
+    @with_folder('data-tars/three-nested.tar.gz')
+    def test_no_data(self, temp_folder):
+        a = os.path.join(temp_folder, 'a.txt')
+        b = os.path.join(temp_folder, 'b', 'b.txt')
+        c = os.path.join(temp_folder, 'c', 'c', 'c.txt')
+
+        with self.assertRaises(NotImplementedError):
+            analyze_date(a, b, c)

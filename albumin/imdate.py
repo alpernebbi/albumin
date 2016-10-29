@@ -3,8 +3,20 @@ from datetime import datetime
 from collections import namedtuple
 
 
-def analyze_date(file_path):
-    raise NotImplementedError
+def analyze_date(*file_paths):
+    imdates = [*from_exif(*file_paths)]
+
+    remaining = []
+    for file_path in file_paths:
+        if file_path not in (i.name for i in imdates):
+            remaining.append(file_path)
+
+    if remaining:
+        raise NotImplementedError(
+            "No datetime information found about some files:\n" \
+            + ("    {}\n" * len(remaining)).format(*remaining)
+        )
+
 
 ImageDate = namedtuple('ImageDate', ['path', 'method', 'datetime'])
 
