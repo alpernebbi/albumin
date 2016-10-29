@@ -2,6 +2,8 @@ import os
 
 from albumin.gitrepo import GitAnnexRepo
 from albumin.utils import sequenced_folder_name
+from albumin.utils import files_in
+from albumin.imdate import analyze_date
 
 
 def import_(repo_path, import_path, **kwargs):
@@ -17,3 +19,17 @@ def import_(repo_path, import_path, **kwargs):
 
     if current_branch:
         repo.checkout(current_branch)
+
+
+def analyze(analyze_path, **kwargs):
+    try:
+        results = analyze_date(*files_in(analyze_path))
+    except NotImplementedError as err:
+        print(err)
+        return
+
+    for map_ in results.maps:
+        del map_[0]
+    for k in sorted(results):
+        print('{}: {} ({})'.format(
+            k, results[k].datetime, results[k].method))

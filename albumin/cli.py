@@ -10,6 +10,8 @@ def main():
 
     if kwargs['import_path']:
         albumin.core.import_(**kwargs)
+    elif kwargs['analyze_path']:
+        albumin.core.analyze(**kwargs)
 
 
 def argument_parser():
@@ -25,6 +27,12 @@ def argument_parser():
         '--import',
         dest="import_path",
         help="import pictures from the given path",
+        metavar="path")
+
+    parser.add_argument(
+        '--analyze',
+        dest="analyze_path",
+        help="analyze pictures in the given path",
         metavar="path")
 
     return parser
