@@ -13,7 +13,7 @@ class TestAlbuminParser(TestCase):
         self.rpath = '/tmp/repo'
         self.ipath = '/tmp/imp'
 
-    def test_argument_parser_help(self):
+    def test_help(self):
         with self.assertRaises(SystemExit) as cm:
             args = self.parse(['-h'])
         assert cm.exception.code == 0
@@ -22,36 +22,36 @@ class TestAlbuminParser(TestCase):
             args = self.parse(['--help'])
         assert cm.exception.code == 0
 
-    def test_argument_parser_repo(self):
+    def test_repo(self):
         args = self.parse([self.rpath])
         assert args.repo_path == self.rpath
 
-    def test_argument_parser_no_repo(self):
+    def test_no_repo(self):
         with self.assertRaises(SystemExit) as cm:
             args = self.parse(['--import', self.ipath])
         assert cm.exception.code == 2
 
-    def test_argument_parser_import(self):
+    def test_import(self):
         args = self.parse([self.rpath, '--import', self.ipath])
         assert args.import_path == self.ipath
 
-    def test_argument_parser_import_nopath(self):
+    def test_import_nopath(self):
         with self.assertRaises(SystemExit) as cm:
             args = self.parse([self.rpath, '--import'])
         assert cm.exception.code == 2
 
-    def test_argument_parser_analyze_nopath(self):
+    def test_analyze_nopath(self):
         with self.assertRaises(SystemExit) as cm:
             args = self.parse([self.rpath, '--analyze'])
         assert cm.exception.code == 2
 
-    def test_argument_parser_analyze_norepo(self):
+    def test_analyze_norepo(self):
         args = self.parse(['--analyze', self.ipath])
 
-    def test_argument_parser_analyze_repo(self):
+    def test_analyze_repo(self):
         args = self.parse([self.rpath, '--analyze', self.ipath])
 
-    def test_argument_parser_analyze_import(self):
+    def test_analyze_import(self):
         with self.assertRaises(SystemExit) as cm:
             args = self.parse([self.rpath, '--analyze', self.ipath,
                                '--import', self.ipath])
