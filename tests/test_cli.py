@@ -48,3 +48,13 @@ class TestAlbuminParser(TestCase):
     def test_argument_parser_analyze_repo(self):
         args = self.parse([self.rpath, '--analyze', self.ipath])
 
+    def test_argument_parser_analyze_import(self):
+        with self.assertRaises(SystemExit) as cm:
+            args = self.parse([self.rpath, '--analyze', self.ipath,
+                               '--import', self.ipath])
+        assert cm.exception.code == 2
+
+        with self.assertRaises(SystemExit) as cm:
+            args = self.parse([self.rpath, '--import', self.ipath,
+                               '--analyze', self.ipath])
+        assert cm.exception.code == 2

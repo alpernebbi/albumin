@@ -23,13 +23,15 @@ def argument_parser():
         help="path of the git-annex repository",
         metavar='repo-path')
 
-    parser.add_argument(
+    actions = parser.add_mutually_exclusive_group()
+
+    actions.add_argument(
         '--import',
         dest="import_path",
         help="import pictures from the given path",
         metavar="path")
 
-    parser.add_argument(
+    actions.add_argument(
         '--analyze',
         dest="analyze_path",
         help="analyze pictures in the given path",
