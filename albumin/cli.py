@@ -35,51 +35,90 @@ def argument_parser():
     actions.add_argument(
         '--analyze',
         dest="analyze_path",
-        action=ChangeRequirementsAction('store'),
-        free=['repo_path'],
+        action=MultiAction,
+        actions=['store', ChangeRequirementsAction],
+        free='repo_path',
         help="analyze pictures in the given path",
         metavar="path")
 
     return parser
 
 
-def ChangeRequirementsAction(base_action=None):
-    action_classes = {
-        None: argparse._StoreAction,
-        'store': argparse._StoreAction,
-        'store_const': argparse._StoreConstAction,
-        'store_true': argparse._StoreTrueAction,
-        'store_false': argparse._StoreFalseAction,
-        'append': argparse._AppendAction,
-        'append_const': argparse._AppendConstAction,
-        'count': argparse._CountAction,
-        'help': argparse._HelpAction,
-        'version': argparse._VersionAction,
-        'parsers': argparse._SubParsersAction
-    }
+class MultiAction(argparse.Action):
+    def __init__(self, *args, actions=None, **kwargs):
+        _, default_kwargs = self.split_custom_args(kwargs)
+        super().__init__(*args, **default_kwargs)
 
-    class CustomAction(action_classes[base_action]):
-        def __init__(self, *args, require=None, free=None, **kwargs):
-            super().__init__(*args, **kwargs)
-            if not isinstance(require, collections.Iterable):
-                require = [require]
-            if not isinstance(free, collections.Iterable):
-                free = [free]
-            self.require = require
-            self.free = free
+        self.acts = []
+        for action in actions:
+            if isinstance(action, type):
+                action_cls = action
+            elif isinstance(action, str):
+                action_cls = self.get_action_class(action)
 
-        def __call__(self, parser, *args, **kwargs):
-            for action in parser._actions:
-                if action.dest in self.require:
-                    action.required = True
-                if action.dest in self.free:
-                    action.required = False
             try:
-                return super().__call__(parser, *args, **kwargs)
+                action_obj = action_cls(*args, **kwargs)
+            except TypeError:
+                action_obj = action_cls(*args, **default_kwargs)
+            self.acts.append(action_obj)
+
+    def __call__(self, *args, **kwargs):
+        for act in self.acts:
+            try:
+                act.__call__(*args, **kwargs)
             except NotImplementedError:
                 pass
 
-    return CustomAction
+    @staticmethod
+    def get_action_class(action=None):
+        action_classes = {
+            None: argparse._StoreAction,
+            'store': argparse._StoreAction,
+            'store_const': argparse._StoreConstAction,
+            'store_true': argparse._StoreTrueAction,
+            'store_false': argparse._StoreFalseAction,
+            'append': argparse._AppendAction,
+            'append_const': argparse._AppendConstAction,
+            'count': argparse._CountAction,
+            'help': argparse._HelpAction,
+            'version': argparse._VersionAction,
+            'parsers': argparse._SubParsersAction
+        }
+        return action_classes.get(action)
+
+    @staticmethod
+    def split_custom_args(kwargs):
+        defaults = ['option_strings', 'dest', 'nargs', 'const',
+                    'default', 'type', 'choices', 'required', 'help',
+                    'metavar']
+        split_args = ({}, {})
+        for k, v in kwargs.items():
+            split_args[k in defaults][k] = v
+        return split_args
+
+
+class ChangeRequirementsAction(argparse.Action):
+    def __init__(self, *args, require=None, free=None, **kwargs):
+        _, default_kwargs = MultiAction.split_custom_args(kwargs)
+        super().__init__(*args, **default_kwargs)
+        if not isinstance(require, collections.Iterable):
+            require = [require]
+        if not isinstance(free, collections.Iterable):
+            free = [free]
+        self.require = require
+        self.free = free
+
+    def __call__(self, parser, *args, **kwargs):
+        for action in parser._actions:
+            if action.dest in self.require:
+                action.required = True
+            if action.dest in self.free:
+                action.required = False
+        try:
+            return super().__call__(parser, *args, **kwargs)
+        except NotImplementedError:
+            pass
+
 
 if __name__ == "__main__":
     main()
