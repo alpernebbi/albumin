@@ -34,13 +34,26 @@ def sequenced_folder_name(parent_path):
 
 
 class MutualMapping(collections.abc.MutableMapping):
-    def __init__(self):
+    def __init__(self, base=None):
         self.map_a = {}
         self.map_b = {}
+
+        if base and self.one_to_one(base):
+            for a, b in base.items():
+                self[a] = b
+        elif base:
+             raise ValueError('{!r} is not one-to-one'.format(base))
 
     def invert(self):
         self.map_a, self.map_b = self.map_b, self.map_a
         return self
+
+    @staticmethod
+    def one_to_one(map_):
+        for a, b in map_.items():
+            if not map_.get(b, a) == a:
+                return False
+        return True
 
     def __getitem__(self, key):
         if key in self.map_a:
