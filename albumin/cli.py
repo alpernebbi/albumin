@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import collections
 import albumin.core
 
 
@@ -34,11 +35,51 @@ def argument_parser():
     actions.add_argument(
         '--analyze',
         dest="analyze_path",
+        action=ChangeRequirementsAction('store'),
+        free=['repo_path'],
         help="analyze pictures in the given path",
         metavar="path")
 
     return parser
 
+
+def ChangeRequirementsAction(base_action=None):
+    action_classes = {
+        None: argparse._StoreAction,
+        'store': argparse._StoreAction,
+        'store_const': argparse._StoreConstAction,
+        'store_true': argparse._StoreTrueAction,
+        'store_false': argparse._StoreFalseAction,
+        'append': argparse._AppendAction,
+        'append_const': argparse._AppendConstAction,
+        'count': argparse._CountAction,
+        'help': argparse._HelpAction,
+        'version': argparse._VersionAction,
+        'parsers': argparse._SubParsersAction
+    }
+
+    class CustomAction(action_classes[base_action]):
+        def __init__(self, *args, require=None, free=None, **kwargs):
+            super().__init__(*args, **kwargs)
+            if not isinstance(require, collections.Iterable):
+                require = [require]
+            if not isinstance(free, collections.Iterable):
+                free = [free]
+            self.require = require
+            self.free = free
+
+        def __call__(self, parser, *args, **kwargs):
+            for action in parser._actions:
+                if action.dest in self.require:
+                    action.required = True
+                if action.dest in self.free:
+                    action.required = False
+            try:
+                return super().__call__(parser, *args, **kwargs)
+            except NotImplementedError:
+                pass
+
+    return CustomAction
 
 if __name__ == "__main__":
     main()

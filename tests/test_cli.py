@@ -45,6 +45,9 @@ class TestAlbuminParser(TestCase):
             args = self.parse([self.rpath, '--analyze'])
         assert cm.exception.code == 2
 
+    def test_argument_parser_analyze_norepo(self):
+        args = self.parse(['--analyze', self.ipath])
+
     def test_argument_parser_analyze_repo(self):
         args = self.parse([self.rpath, '--analyze', self.ipath])
 
