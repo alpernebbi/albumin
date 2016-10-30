@@ -46,8 +46,9 @@ def argument_parser():
 
 class MultiAction(argparse.Action):
     def __init__(self, *args, actions=None, **kwargs):
-        _, default_kwargs = self.split_custom_args(kwargs)
+        custom_kwargs, default_kwargs = self.split_custom_args(kwargs)
         super().__init__(*args, **default_kwargs)
+        self.custom_kwargs = custom_kwargs
 
         self.acts = []
         for action in actions:
@@ -96,6 +97,15 @@ class MultiAction(argparse.Action):
             split_args[k in defaults][k] = v
         return split_args
 
+    def __repr__(self):
+        defaults = super().__repr__()[:-1]
+        customs = ', {}={{}}' * len(self.custom_kwargs)
+        customs = customs.format(*self.custom_kwargs.keys())
+        customs = customs.format(*self.custom_kwargs.values())
+        actions = [type(x).__name__ for x in self.acts]
+        actions = ', acts={!r})'.format(actions)
+        return defaults + customs + actions
+
 
 class ChangeRequirementsAction(argparse.Action):
     def __init__(self, *args, require=None, free=None, **kwargs):
@@ -118,6 +128,12 @@ class ChangeRequirementsAction(argparse.Action):
             return super().__call__(parser, *args, **kwargs)
         except NotImplementedError:
             pass
+
+    def __repr__(self):
+        defaults = super().__repr__()[:-1]
+        customs = 'require={!r}, free={!r}'
+        customs = customs.format(self.require, self.free)
+        return '{}, {})'.format(defaults, customs)
 
 
 if __name__ == "__main__":
