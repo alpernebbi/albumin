@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import collections
 import albumin.core
 
 
@@ -111,12 +110,8 @@ class ChangeRequirementsAction(argparse.Action):
     def __init__(self, *args, require=None, free=None, **kwargs):
         _, default_kwargs = MultiAction.split_custom_args(kwargs)
         super().__init__(*args, **default_kwargs)
-        if not isinstance(require, collections.Iterable):
-            require = [require]
-        if not isinstance(free, collections.Iterable):
-            free = [free]
-        self.require = require
-        self.free = free
+        self.require = require if require else []
+        self.free = free if free else []
 
     def __call__(self, parser, *args, **kwargs):
         for action in parser._actions:
