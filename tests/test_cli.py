@@ -1,4 +1,5 @@
 from unittest import TestCase
+from argparse import ArgumentError
 from tests.utils import with_repo
 from tests.utils import with_folder
 
@@ -38,3 +39,12 @@ class TestAlbuminParser(TestCase):
         with self.assertRaises(SystemExit) as cm:
             args = self.parse([self.rpath, '--import'])
         assert cm.exception.code == 2
+
+    def test_argument_parser_analyze_nopath(self):
+        with self.assertRaises(SystemExit) as cm:
+            args = self.parse([self.rpath, '--analyze'])
+        assert cm.exception.code == 2
+
+    def test_argument_parser_analyze_repo(self):
+        args = self.parse([self.rpath, '--analyze', self.ipath])
+
