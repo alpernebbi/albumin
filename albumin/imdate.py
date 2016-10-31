@@ -14,10 +14,7 @@ def analyze_date(*file_paths, chainmap=True):
     remaining = set(file_paths) - done
 
     if remaining:
-        return results, NotImplementedError(
-            "No datetime information found about some files:\n" \
-            + ("    {}\n" * len(remaining)).format(*remaining)
-        )
+        return results, remaining
     return results, None
 
 

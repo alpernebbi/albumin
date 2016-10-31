@@ -59,14 +59,82 @@ def import_(repo_path, import_path, **kwargs):
         repo.checkout(current_branch)
 
 
-def analyze(analyze_path, **kwargs):
-    results, error = analyze_date(*files_in(analyze_path))
-    if error:
-        print(error)
+def analyze(analyze_path, repo_path=None, **kwargs):
+    analyze_files = list(files_in(analyze_path))
+    analyze_data, remaining = analyze_date(*analyze_files)
+    only_repo, same, different = {}, {}, {}
 
-    for k in sorted(results):
-        print('{}: {} ({})'.format(
-            k, results[k].datetime, results[k].method))
+    if repo_path:
+        print('Compared to repo: {}'.format(repo_path))
+        repo = GitAnnexRepo(repo_path)
+        analyze_keys = {f: repo.annex.calckey(f) for f in analyze_files}
+        common_keys = repo.annex.keys & set(analyze_keys.values())
+        repo_data = repo_datetimes(repo, common_keys)
+
+        if repo_data:
+            for file in remaining:
+                key = analyze_keys[file]
+                if key in repo_data:
+                    only_repo[file] = repo_data[key]
+                    del remaining[file]
+
+            analyze_data = analyze_data.new_child()
+            for file, value in analyze_data.items():
+                key = analyze_keys[file]
+                if key in repo_data:
+                    if repo_data[key] == value:
+                        same[file] = repo_data[key]
+                        analyze_data[file] = None
+                    else:
+                        different[file] = (repo_data[key], value)
+                        analyze_data[file] = None
+
+            if same:
+                print()
+                print("Some files have metadata matching the repo:")
+                for file in sorted(same):
+                    print('    {}: {} ({})'.format(
+                        file,
+                        same[file].datetime,
+                        same[file].method))
+
+            if only_repo:
+                print()
+                print('Some files have metadata only in the repo:')
+                for file in sorted(only_repo):
+                    print('    {}: {} ({})'.format(
+                        file,
+                        only_repo[file].datetime,
+                        only_repo[file].method))
+
+            if different:
+                print()
+                print('Some files have contradictory info:')
+                for file in sorted(different):
+                    print('    {}: {} ({}) vs {} ({}) (repo)'.format(
+                        file,
+                        different[file][1].datetime,
+                        different[file][1].method,
+                        different[file][0].datetime,
+                        different[file][0].method))
+
+    if set(analyze_data.values()) != {None}:
+        print()
+        print('New files:')
+        for file in sorted(analyze_data):
+            if (file in same) or (file in different):
+                continue
+            print('    {}: {} ({})'.format(
+                file,
+                analyze_data[file].datetime,
+                analyze_data[file].method
+            ))
+
+    if remaining:
+        print()
+        print("Some files have no datetime information:")
+        for file in remaining:
+            print('    {}'.format(file))
 
 
 def repo_datetimes(repo, keys, chainmap=True):
