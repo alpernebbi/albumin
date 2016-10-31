@@ -29,15 +29,13 @@ def analyze(analyze_path, **kwargs):
     if error:
         print(error)
 
-    for map_ in results.maps:
-        del map_[0]
     for k in sorted(results):
         print('{}: {} ({})'.format(
             k, results[k].datetime, results[k].method))
 
 
-def repo_datetimes(repo, keys):
-    maps = {method: {0: method} for method in method_order}
+def repo_datetimes(repo, keys, chainmap=True):
+    maps = {method: {} for method in method_order}
     for key in keys:
         dt_string = repo.annex[key]['datetime']
         method = repo.annex[key]['datetime-method']
@@ -51,8 +49,11 @@ def repo_datetimes(repo, keys):
         except TypeError:
             continue
 
-    ordered_maps = [maps[method] for method in method_order]
-    return ChainMap(*ordered_maps)
+    if chainmap:
+        ordered_maps = [maps[method] for method in method_order]
+        return ChainMap(*ordered_maps)
+    else:
+        return maps
 
 
 method_order = [

@@ -4,9 +4,14 @@ from collections import namedtuple
 from collections import ChainMap
 
 
-def analyze_date(*file_paths):
-    results = from_exif(*file_paths)
-    remaining = [f for f in file_paths if f not in results]
+def analyze_date(*file_paths, chainmap=True):
+    results = from_exif(*file_paths, chainmap=chainmap)
+    if chainmap:
+        done = results.keys()
+    else:
+        done_parts = (set(map_.keys()) for map_ in results.values())
+        done = set.union(*done_parts)
+    remaining = set(file_paths) - done
 
     if remaining:
         return results, NotImplementedError(
@@ -19,11 +24,12 @@ def analyze_date(*file_paths):
 ImageDate = namedtuple('ImageDate', ['method', 'datetime'])
 
 
-def from_exif(*file_paths):
+def from_exif(*file_paths, chainmap=True):
     with ExifTool() as tool:
         tags_list = tool.get_tags_batch(exiftool_tags, file_paths)
+    method = lambda tag : tag.split(':')[-1]
 
-    maps = {tag: {0: tag.split(':')[-1]} for tag in exiftool_tags}
+    maps = {method(tag): {} for tag in exiftool_tags}
     for tags in tags_list:
         for tag in tags:
             file = tags['SourceFile']
@@ -32,12 +38,15 @@ def from_exif(*file_paths):
             try:
                 dt = datetime.strptime(datetime_, '%Y:%m:%d %H:%M:%S')
                 data = ImageDate(tag.split(':')[-1], dt)
-                maps[tag][file] = data
+                maps[method(tag)][file] = data
             except ValueError:
                 continue
 
-    ordered_maps = [maps[tag] for tag in exiftool_tags]
-    return ChainMap(*ordered_maps)
+    if chainmap:
+        ordered_maps = [maps[method(tag)] for tag in exiftool_tags]
+        return ChainMap(*ordered_maps)
+    else:
+        return maps
 
 
 def exiftool_generator(tags):
