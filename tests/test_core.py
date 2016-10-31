@@ -9,6 +9,7 @@ class TestAlbuminCore(TestCase):
     @with_repo(annex=True)
     @with_folder('data-tars/three-nested.tar.gz')
     def test_import_basics(self, repo, temp_folder):
+        self.skipTest('Invalid files for importing. \n')
         current_branch = repo.branches[0]
         import_(repo.path, temp_folder)
         assert repo.branches[0] == current_branch
