@@ -1,9 +1,12 @@
 import os
+from datetime import datetime
+from collections import ChainMap
 
 from albumin.gitrepo import GitAnnexRepo
 from albumin.utils import sequenced_folder_name
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
+from albumin.imdate import ImageDate
 
 
 def import_(repo_path, import_path, **kwargs):
@@ -31,3 +34,28 @@ def analyze(analyze_path, **kwargs):
     for k in sorted(results):
         print('{}: {} ({})'.format(
             k, results[k].datetime, results[k].method))
+
+
+def repo_datetimes(repo, keys):
+    maps = {method: {0: method} for method in method_order}
+    for key in keys:
+        dt_string = repo.annex[key]['datetime']
+        method = repo.annex[key]['datetime-method']
+
+        try:
+            dt = datetime.strptime(dt_string, '%Y-%m-%d@%H-%M-%S')
+            data = ImageDate(method, dt)
+            maps[method][key] = data
+        except ValueError:
+            continue
+        except TypeError:
+            continue
+
+    ordered_maps = [maps[method] for method in method_order]
+    return ChainMap(*ordered_maps)
+
+
+method_order = [
+    'Manual',
+    'DateTimeOriginal',
+    'CreateDate']
