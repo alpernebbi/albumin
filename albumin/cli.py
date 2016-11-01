@@ -12,6 +12,8 @@ def main():
         albumin.core.import_(**kwargs)
     elif kwargs['analyze_path']:
         albumin.core.analyze(**kwargs)
+    elif kwargs['recheck_repo']:
+        albumin.core.recheck(**kwargs)
 
 
 def argument_parser():
@@ -39,6 +41,12 @@ def argument_parser():
         free='repo_path',
         help="analyze pictures in the given path",
         metavar="path")
+
+    actions.add_argument(
+        '--recheck',
+        dest="recheck_repo",
+        action='store_true',
+        help="recheck files in repo for new metadata")
 
     return parser
 

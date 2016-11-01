@@ -29,6 +29,30 @@ def import_(repo_path, import_path, **kwargs):
         repo.checkout(current_branch)
 
 
+def recheck(repo_path, **kwargs):
+    repo = GitAnnexRepo(repo_path)
+    current_branch = repo.branches[0]
+    repo.checkout('albumin-imports')
+
+    updates, remaining = get_datetime_updates(repo, repo_path)
+    if updates:
+        print("New information: ")
+        for file in sorted(repo.annex.files):
+            key = repo.annex.files[file]
+            if key in updates:
+                (datum, old) = updates[key]
+                print('    {}: {} => {}'.format(file, old, datum))
+                print('        (key: {})'.format(key))
+
+    if remaining:
+        print("Still no information: ")
+        for file in sorted(remaining):
+            print('    {}'.format(os.path.relpath(file, repo_path)))
+
+    if current_branch:
+        repo.checkout(current_branch)
+
+
 def analyze(analyze_path, repo_path=None, **kwargs):
     analyze_files = list(files_in(analyze_path))
     overwrites, additions, keys = {}, {}, {}
