@@ -42,7 +42,5 @@ class TestImageDates(TestCase):
         b = os.path.join(temp_folder, 'b', 'b.txt')
         c = os.path.join(temp_folder, 'c', 'c', 'c.txt')
 
-        with self.assertRaises(NotImplementedError):
-            results, error = analyze_date(a, b, c)
-            if error:
-                raise error
+        results, remaining = analyze_date(a, b, c)
+        assert remaining
