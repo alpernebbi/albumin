@@ -22,7 +22,8 @@ def main(*args):
         albumin.core.analyze(ns.analyze_path,
                              repo=ns.repo)
     elif ns.recheck_repo:
-        albumin.core.recheck(ns.repo)
+        albumin.core.recheck(ns.repo,
+                             apply=ns.apply)
 
 
 def argument_parser():
@@ -56,6 +57,15 @@ def argument_parser():
         dest="recheck_repo",
         action='store_true',
         help="recheck files in repo for new metadata")
+
+    options = parser.add_argument_group('Options')
+
+    options.add_argument(
+        '--apply',
+        dest='apply',
+        action='store_true',
+        help="apply new metadata from recheck"
+    )
 
     return parser
 

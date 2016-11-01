@@ -26,7 +26,7 @@ def import_(repo, import_path, **kwargs):
         repo.checkout(current_branch)
 
 
-def recheck(repo):
+def recheck(repo, apply=False):
     current_branch = repo.branches[0]
     repo.checkout('albumin-imports')
 
@@ -39,6 +39,10 @@ def recheck(repo):
                 (datum, old) = updates[key]
                 print('    {}: {} => {}'.format(file, old, datum))
                 print('        (key: {})'.format(key))
+
+        if apply:
+            apply_datetime_updates(repo, updates)
+            print("Applied.")
 
     if remaining:
         print("Still no information: ")
