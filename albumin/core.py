@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 
 from albumin.utils import sequenced_folder_name
 from albumin.utils import files_in
@@ -30,7 +29,7 @@ def import_(repo, import_path, **kwargs):
         extension = os.path.splitext(file)[1]
         key = repo.annex.files[file]
         meta = repo.annex[key]
-        dt = datetime.strptime(meta['datetime'], '%Y-%m-%d@%H-%M-%S')
+        dt = meta['datetime']
         dt = dt.strftime('%Y%m%dT%H%M%SZ')
         for i in range(0, 100):
             try:
@@ -159,24 +158,19 @@ def get_datetime_updates(repo, update_path):
 
 def apply_datetime_updates(repo, updates):
     for key, (datum, _) in updates.items():
-        dt_string = datum.datetime.strftime('%Y-%m-%d@%H-%M-%S')
-        repo.annex[key]['datetime'] = dt_string
+        repo.annex[key]['datetime'] = datum.datetime
         repo.annex[key]['datetime-method'] = datum.method
 
 
 def get_repo_datetimes(repo, keys):
     data = {}
     for key in keys:
-        dt_string = repo.annex[key]['datetime']
+        dt = repo.annex[key]['datetime']
         method = repo.annex[key]['datetime-method']
 
         try:
-            dt = datetime.strptime(dt_string, '%Y-%m-%d@%H-%M-%S')
-            datum = ImageDate(method, dt)
-            data[key] = datum
+            data[key] = ImageDate(method, dt)
         except ValueError:
-            data[key] = None
-        except TypeError:
             data[key] = None
 
     return data

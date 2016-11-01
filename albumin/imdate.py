@@ -16,11 +16,24 @@ class ImageDate:
         'ManualUntrusted'
     ]
 
-    def __init__(self, method, datetime):
+    datetime_formats = [
+        '%Y:%m:%d %H:%M:%S',
+        '%Y-%m-%d@%H-%M-%S'
+    ]
+
+    def __init__(self, method, datetime_):
         self.method = method.split(':')[-1]
         if self.method not in ImageDate.methods:
             raise ValueError(method)
-        self.datetime = datetime
+
+        for format_ in ImageDate.datetime_formats:
+            try:
+                self.datetime = datetime.strptime(datetime_, format_)
+                break
+            except (ValueError, TypeError):
+                continue
+        else:
+            raise ValueError(datetime_)
 
     @property
     def order(self):
@@ -62,9 +75,8 @@ def from_exif(*file_paths):
     data = {}
     for tags in tags_list:
         file = tags['SourceFile']
-        for tag, dt_string in tags.items():
+        for tag, dt in tags.items():
             try:
-                dt = datetime.strptime(dt_string, '%Y:%m:%d %H:%M:%S')
                 datum = ImageDate(tag, dt)
                 data[file] = max(data.get(file), datum)
             except ValueError:
