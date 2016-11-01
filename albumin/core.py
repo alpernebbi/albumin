@@ -22,6 +22,29 @@ def import_(repo, import_path, **kwargs):
 
     apply_datetime_updates(repo, updates)
 
+    repo.checkout('master')
+    repo.cherry_pick('albumin-imports')
+    batch_path = os.path.join(repo.path, batch_name)
+    batch_files = files_in(batch_path, relative=repo.path)
+    for file in batch_files:
+        extension = os.path.splitext(file)[1]
+        key = repo.annex.files[file]
+        meta = repo.annex[key]
+        dt = datetime.strptime(meta['datetime'], '%Y-%m-%d@%H-%M-%S')
+        dt = dt.strftime('%Y%m%dT%H%M%SZ')
+        for i in range(0, 100):
+            try:
+                new_name = '{}{:02}{}'.format(dt, i, extension)
+                new_path = os.path.join(import_name, new_name)
+                repo.move(file, new_path)
+                break
+            except ValueError:
+                continue
+        else:
+            err_msg = 'Ran out of {}xx{} files'
+            raise RuntimeError(err_msg.format(dt, extension))
+    repo.commit('Process batch {} ({})'.format(batch_name, import_name))
+
     if current_branch:
         repo.checkout(current_branch)
 
