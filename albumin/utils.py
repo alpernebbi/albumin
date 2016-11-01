@@ -6,7 +6,9 @@ import collections.abc
 
 
 def files_in(dir_path, relative=False):
-    for root, dirs, files in os.walk(dir_path):
+    exclude = ['.git']
+    for root, dirs, files in os.walk(dir_path, topdown=True):
+        dirs[:] = [d for d in dirs if d not in exclude]
         if relative:
             root = os.path.relpath(root, start=relative)
         for f in files:
