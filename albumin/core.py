@@ -1,25 +1,22 @@
 import os
 from datetime import datetime
 
-from albumin.gitrepo import GitAnnexRepo
 from albumin.utils import sequenced_folder_name
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
 
 
-def import_(repo_path, import_path, **kwargs):
-    repo = GitAnnexRepo(repo_path)
-    current_branch = repo.branches[0]
-
+def import_(repo, import_path, **kwargs):
     updates, remaining = get_datetime_updates(repo, import_path)
     if remaining:
         raise NotImplementedError(remaining)
 
+    current_branch = repo.branches[0]
     repo.checkout('albumin-imports')
     repo.annex.import_(import_path)
     import_name = os.path.basename(import_path)
-    batch_name = sequenced_folder_name(repo_path)
+    batch_name = sequenced_folder_name(repo.path)
     repo.move(import_name, batch_name)
     repo.commit("Import batch {} ({})".format(batch_name, import_name))
 
@@ -29,12 +26,11 @@ def import_(repo_path, import_path, **kwargs):
         repo.checkout(current_branch)
 
 
-def recheck(repo_path, **kwargs):
-    repo = GitAnnexRepo(repo_path)
+def recheck(repo):
     current_branch = repo.branches[0]
     repo.checkout('albumin-imports')
 
-    updates, remaining = get_datetime_updates(repo, repo_path)
+    updates, remaining = get_datetime_updates(repo, repo.path)
     if updates:
         print("New information: ")
         for file in sorted(repo.annex.files):
@@ -47,19 +43,18 @@ def recheck(repo_path, **kwargs):
     if remaining:
         print("Still no information: ")
         for file in sorted(remaining):
-            print('    {}'.format(os.path.relpath(file, repo_path)))
+            print('    {}'.format(os.path.relpath(file, repo.path)))
 
     if current_branch:
         repo.checkout(current_branch)
 
 
-def analyze(analyze_path, repo_path=None, **kwargs):
+def analyze(analyze_path, repo=None):
     analyze_files = list(files_in(analyze_path))
     overwrites, additions, keys = {}, {}, {}
 
-    if repo_path:
-        print('Compared to repo: {}'.format(repo_path))
-        repo = GitAnnexRepo(repo_path)
+    if repo:
+        print('Compared to repo: {}'.format(repo.path))
         keys = {f: repo.annex.calckey(f) for f in analyze_files}
         updates, remaining = get_datetime_updates(repo, analyze_path)
 

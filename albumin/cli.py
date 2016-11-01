@@ -1,19 +1,28 @@
 #!/usr/bin/env python3
 import argparse
 import albumin.core
+from albumin.gitrepo import GitAnnexRepo
 
 
-def main():
+def main(*args):
     parser = argument_parser()
-    namespace = parser.parse_args()
-    kwargs = vars(namespace)
+    ns = parser.parse_args(*args)
 
-    if kwargs['import_path']:
-        albumin.core.import_(**kwargs)
-    elif kwargs['analyze_path']:
-        albumin.core.analyze(**kwargs)
-    elif kwargs['recheck_repo']:
-        albumin.core.recheck(**kwargs)
+    if ns.repo_path:
+        repo = GitAnnexRepo(ns.repo_path)
+        ns.repo = repo
+        del ns.repo_path
+    else:
+        ns.repo = None
+
+    if ns.import_path:
+        albumin.core.import_(ns.repo,
+                             ns.import_path)
+    elif ns.analyze_path:
+        albumin.core.analyze(ns.analyze_path,
+                             repo=ns.repo)
+    elif ns.recheck_repo:
+        albumin.core.recheck(ns.repo)
 
 
 def argument_parser():
