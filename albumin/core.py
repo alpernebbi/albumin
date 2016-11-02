@@ -14,6 +14,9 @@ def import_(repo, import_path, timezone=None):
         repo, import_path, timezone=timezone)
     if remaining:
         raise NotImplementedError(remaining)
+    if not updates:
+        print('All files and info already in repo.')
+        return
 
     repo.checkout('albumin-imports')
     repo.annex.import_(import_path)
