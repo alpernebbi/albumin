@@ -9,4 +9,4 @@ convert "$1" -resize 1x1 "$new"
 exiftool -overwrite_original_in_place -ThumbnailImage= -PreviewImage= "$new"
 touch "$new" --reference="$1"
 
-diff <(exiftool "$1") <(exiftool "$new") -U 3
+diff <(exiftool "$1" | sort) <(exiftool "$new" | sort) -U 0
