@@ -2,9 +2,14 @@ from exiftool import ExifTool
 from datetime import datetime
 
 
-def analyze_date(*file_paths):
+def analyze_date(*file_paths, timezone=None):
     results = from_exif(*file_paths)
     remaining = {f for f in file_paths if f not in results}
+
+    if timezone:
+        for file, imdate in results.items():
+            imdate.datetime = timezone.localize(imdate.datetime)
+
     return results, remaining
 
 

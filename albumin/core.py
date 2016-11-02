@@ -1,4 +1,5 @@
 import os
+import pytz
 
 from albumin.utils import sequenced_folder_name
 from albumin.utils import files_in
@@ -6,10 +7,11 @@ from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
 
 
-def import_(repo, import_path):
+def import_(repo, import_path, timezone=None):
     current_branch = repo.branches[0]
 
-    updates, remaining = get_datetime_updates(repo, import_path)
+    updates, remaining = get_datetime_updates(
+        repo, import_path, timezone=timezone)
     if remaining:
         raise NotImplementedError(remaining)
 
@@ -20,7 +22,7 @@ def import_(repo, import_path):
     repo.move(import_name, batch_name)
     repo.commit("Import batch {} ({})".format(batch_name, import_name))
 
-    apply_datetime_updates(repo, updates)
+    apply_datetime_updates(repo, updates, timezone=timezone)
 
     repo.checkout('master')
     repo.cherry_pick('albumin-imports')
@@ -30,7 +32,7 @@ def import_(repo, import_path):
         extension = os.path.splitext(file)[1]
         key = repo.annex.files[file]
         meta = repo.annex[key]
-        dt = meta['datetime']
+        dt = meta['datetime'].astimezone(pytz.utc)
         dt = dt.strftime('%Y%m%dT%H%M%SZ')
         for i in range(0, 100):
             try:
@@ -77,14 +79,15 @@ def recheck(repo, apply=False):
     repo.checkout(current_branch)
 
 
-def analyze(analyze_path, repo=None):
-    analyze_files = list(files_in(analyze_path))
+def analyze(analyze_path, repo=None, timezone=None):
+    files = list(files_in(analyze_path))
     overwrites, additions, keys = {}, {}, {}
 
     if repo:
         print('Compared to repo: {}'.format(repo.path))
-        keys = {f: repo.annex.calckey(f) for f in analyze_files}
-        updates, remaining = get_datetime_updates(repo, analyze_path)
+        keys = {f: repo.annex.calckey(f) for f in files}
+        updates, remaining = get_datetime_updates(
+            repo, analyze_path, timezone=timezone)
 
         for file, key in keys.items():
             if key in updates:
@@ -100,10 +103,10 @@ def analyze(analyze_path, repo=None):
             if rem_data.get(keys[file], None):
                 remaining.remove(file)
     else:
-        additions, remaining = analyze_date(*analyze_files)
+        additions, remaining = analyze_date(*files, timezone=timezone)
 
     modified = set.union(*map(set, (overwrites, additions, remaining)))
-    redundants = set(analyze_files) - modified
+    redundants = set(files) - modified
     if redundants:
         print("No new information: ")
         for file in sorted(redundants):
@@ -128,9 +131,9 @@ def analyze(analyze_path, repo=None):
             print('    {}'.format(file))
 
 
-def get_datetime_updates(repo, update_path):
+def get_datetime_updates(repo, update_path, timezone=None):
     files = list(files_in(update_path))
-    file_data, remaining = analyze_date(*files)
+    file_data, remaining = analyze_date(*files, timezone=timezone)
     keys = {f: repo.annex.calckey(f) for f in files}
 
     def conflict_error(key, data_1, data_2):
@@ -153,6 +156,13 @@ def get_datetime_updates(repo, update_path):
     for key, datum in data.items():
         old_datum = repo_data.get(key)
         if datum == old_datum:
+            if not timezone:
+                try:
+                    timezone_ = repo.annex[key]['timezone']
+                    datum.datetime = timezone_.localize(datum.datetime)
+                except:
+                    timezone_ = pytz.utc
+                    datum.datetime = timezone_.localize(datum.datetime)
             if datum.datetime != old_datum.datetime:
                 updates[key] = (datum, repo_data.get(key))
         else:
@@ -160,10 +170,13 @@ def get_datetime_updates(repo, update_path):
     return updates, remaining
 
 
-def apply_datetime_updates(repo, updates):
+def apply_datetime_updates(repo, updates, **commons):
     for key, (datum, _) in updates.items():
         repo.annex[key]['datetime'] = datum.datetime
         repo.annex[key]['datetime-method'] = datum.method
+        for k, v in commons.items():
+            if v:
+                repo.annex[key][k] = v
 
 
 def get_repo_datetimes(repo, keys):

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import argparse
+import pytz
+
 import albumin.core
 from albumin.gitrepo import GitAnnexRepo
 
@@ -16,12 +18,17 @@ def main(*args):
     else:
         ns.repo = None
 
+    if ns.timezone:
+        ns.timezone = pytz.timezone(ns.timezone)
+
     if ns.import_path:
         albumin.core.import_(ns.repo,
-                             ns.import_path)
+                             ns.import_path,
+                             timezone=ns.timezone)
     elif ns.analyze_path:
         albumin.core.analyze(ns.analyze_path,
-                             repo=ns.repo)
+                             repo=ns.repo,
+                             timezone=ns.timezone)
     elif ns.recheck_repo:
         albumin.core.recheck(ns.repo,
                              apply=ns.apply)
@@ -75,6 +82,13 @@ def argument_parser():
         action='store_true',
         help="apply new metadata from recheck")
 
+    options.add_argument(
+        '--timezone',
+        dest='timezone',
+        action='store',
+        metavar='tz',
+        help="assume pictures have dates in given timezone")
+
     return parser
 
 
@@ -102,6 +116,16 @@ def validate_namespace(ns):
             raise ValueError(
                 '--apply requires --recheck')
 
+    if ns.timezone:
+        if not (ns.import_path or ns.analyze_path):
+            raise ValueError(
+                '--timezone requires either --import or --analyze')
+        if ns.recheck_repo:
+            raise ValueError(
+                '--timezone is not applicable to --recheck')
+        if ns.timezone not in pytz.all_timezones:
+            raise ValueError(
+                'Invalid timezone {}'.format(ns.timezone))
 
 
 if __name__ == "__main__":
