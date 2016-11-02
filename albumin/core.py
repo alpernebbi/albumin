@@ -93,9 +93,9 @@ def analyze(analyze_path, repo=None):
 
         rem_keys = {k for f, k in keys.items() if f in remaining}
         rem_data = get_repo_datetimes(repo, rem_keys)
-        for file in remaining:
+        for file in remaining.copy():
             if rem_data.get(keys[file], None):
-                remaining.pop(file)
+                remaining.remove(file)
     else:
         additions, remaining = analyze_date(*analyze_files)
 
@@ -148,7 +148,11 @@ def get_datetime_updates(repo, update_path):
 
     updates = {}
     for key, datum in data.items():
-        if datum > repo_data.get(key):
+        old_datum = repo_data.get(key)
+        if datum == old_datum:
+            if datum.datetime != old_datum.datetime:
+                updates[key] = (datum, repo_data.get(key))
+        else:
             updates[key] = (datum, repo_data.get(key))
     return updates, remaining
 
