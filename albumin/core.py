@@ -71,6 +71,9 @@ def recheck(repo, apply=False):
         for file in sorted(remaining):
             print('    {}'.format(os.path.relpath(file, repo.path)))
 
+    if not updates and not remaining:
+        print("Everything is fine.")
+
     repo.checkout(current_branch)
 
 
