@@ -26,14 +26,17 @@ class ImageDate:
         if self.method not in ImageDate.methods:
             raise ValueError(method)
 
-        for format_ in ImageDate.datetime_formats:
-            try:
-                self.datetime = datetime.strptime(datetime_, format_)
-                break
-            except (ValueError, TypeError):
-                continue
+        if isinstance(datetime_, datetime):
+            self.datetime = datetime_
         else:
-            raise ValueError(datetime_)
+            for fmt_ in ImageDate.datetime_formats:
+                try:
+                    self.datetime = datetime.strptime(datetime_, fmt_)
+                    break
+                except (ValueError, TypeError):
+                    continue
+            else:
+                raise ValueError(datetime_)
 
     @property
     def order(self):
