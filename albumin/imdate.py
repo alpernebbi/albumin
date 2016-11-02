@@ -69,6 +69,10 @@ def from_exif(*file_paths):
     if not file_paths:
         return {}
 
+    exiftool_tags = [
+        'EXIF:DateTimeOriginal',
+        'EXIF:CreateDate']
+
     with ExifTool() as tool:
         tags_list = tool.get_tags_batch(exiftool_tags, file_paths)
 
@@ -82,16 +86,3 @@ def from_exif(*file_paths):
             except ValueError:
                 continue
     return data
-
-
-def exiftool_generator(tags):
-    with ExifTool() as exif_tool:
-        file_path = yield None
-        while file_path:
-            tags_ = exif_tool.get_tags(tags, file_path)
-            file_path = yield tags_
-
-
-exiftool_tags = [
-    'EXIF:DateTimeOriginal',
-    'EXIF:CreateDate']

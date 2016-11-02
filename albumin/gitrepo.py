@@ -96,7 +96,6 @@ class GitRepo:
         if not os.listdir(abs_src_dir):
             os.removedirs(abs_src_dir)
 
-
     @property
     def tree_hash(self):
         commit = self._git('cat-file', 'commit', 'HEAD').split()
@@ -138,9 +137,6 @@ class GitAnnex(collections.abc.Mapping):
 
     def calckey(self, file_path):
         return self._annex('calckey', file_path).rstrip()
-
-    def locate(self, key):
-        return self._annex('contentlocation', key).rstrip()
 
     @property
     def keys(self):

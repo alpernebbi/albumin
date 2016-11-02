@@ -6,12 +6,13 @@ from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
 
 
-def import_(repo, import_path, **kwargs):
+def import_(repo, import_path):
+    current_branch = repo.branches[0]
+
     updates, remaining = get_datetime_updates(repo, import_path)
     if remaining:
         raise NotImplementedError(remaining)
 
-    current_branch = repo.branches[0]
     repo.checkout('albumin-imports')
     repo.annex.import_(import_path)
     import_name = os.path.basename(import_path)
@@ -44,8 +45,7 @@ def import_(repo, import_path, **kwargs):
             raise RuntimeError(err_msg.format(dt, extension))
     repo.commit('Process batch {} ({})'.format(batch_name, import_name))
 
-    if current_branch:
-        repo.checkout(current_branch)
+    repo.checkout(current_branch)
 
 
 def recheck(repo, apply=False):
@@ -71,8 +71,7 @@ def recheck(repo, apply=False):
         for file in sorted(remaining):
             print('    {}'.format(os.path.relpath(file, repo.path)))
 
-    if current_branch:
-        repo.checkout(current_branch)
+    repo.checkout(current_branch)
 
 
 def analyze(analyze_path, repo=None):
@@ -97,7 +96,6 @@ def analyze(analyze_path, repo=None):
         for file in remaining:
             if rem_data.get(keys[file], None):
                 remaining.pop(file)
-
     else:
         additions, remaining = analyze_date(*analyze_files)
 
@@ -152,7 +150,6 @@ def get_datetime_updates(repo, update_path):
     for key, datum in data.items():
         if datum > repo_data.get(key):
             updates[key] = (datum, repo_data.get(key))
-
     return updates, remaining
 
 
@@ -172,5 +169,4 @@ def get_repo_datetimes(repo, keys):
             data[key] = ImageDate(method, dt)
         except ValueError:
             data[key] = None
-
     return data
