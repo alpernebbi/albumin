@@ -7,6 +7,7 @@ from albumin.gitrepo import GitAnnexRepo
 def main(*args):
     parser = argument_parser()
     ns = parser.parse_args(*args)
+    validate_namespace(ns)
 
     if ns.repo_path:
         repo = GitAnnexRepo(ns.repo_path)
@@ -28,29 +29,37 @@ def main(*args):
 
 def argument_parser():
     parser = argparse.ArgumentParser(
-        description="Manage photographs using a git-annex repository.")
+        description="Manage photographs using a git-annex repository.",
+        usage='%(prog)s [repo-path] [action [option ...]]',
+        add_help=False)
 
-    parser.add_argument(
+    positional = parser.add_argument_group('Positional arguments')
+
+    positional.add_argument(
         'repo_path',
-        help="path of the git-annex repository",
-        metavar='repo-path')
+        metavar='repo-path',
+        nargs='?',
+        help="path of the git-annex repository")
 
-    actions = parser.add_mutually_exclusive_group()
+    actions = parser.add_argument_group('Actions')
+
+    actions.add_argument(
+        '--help', '-h',
+        action='help',
+        help='show this help message and exit')
 
     actions.add_argument(
         '--import',
         dest="import_path",
-        help="import pictures from the given path",
-        metavar="path")
+        metavar="path",
+        help="import pictures from the given path")
 
     actions.add_argument(
         '--analyze',
         dest="analyze_path",
-        action=MultiAction,
-        actions=['store', ChangeRequirementsAction],
-        free='repo_path',
-        help="analyze pictures in the given path",
-        metavar="path")
+        action='store',
+        metavar="path",
+        help="analyze pictures in the given path")
 
     actions.add_argument(
         '--recheck',
@@ -64,98 +73,35 @@ def argument_parser():
         '--apply',
         dest='apply',
         action='store_true',
-        help="apply new metadata from recheck"
-    )
+        help="apply new metadata from recheck")
 
     return parser
 
 
-class MultiAction(argparse.Action):
-    def __init__(self, *args, actions=None, **kwargs):
-        custom_kwargs, default_kwargs = self.split_custom_args(kwargs)
-        super().__init__(*args, **default_kwargs)
-        self.custom_kwargs = custom_kwargs
+def validate_namespace(ns):
+    if ns.import_path:
+        if not ns.repo_path:
+            raise ValueError(
+                'Repository required for --import.')
+        if ns.analyze_path or ns.recheck_repo:
+            raise ValueError(
+                'Multiple actions are forbidden.')
 
-        self.acts = []
-        for action in actions:
-            if isinstance(action, type):
-                action_cls = action
-            elif isinstance(action, str):
-                action_cls = self.get_action_class(action)
+    if ns.analyze_path:
+        if ns.import_path or ns.recheck_repo:
+            raise ValueError(
+                'Multiple actions are forbidden.')
 
-            try:
-                action_obj = action_cls(*args, **kwargs)
-            except TypeError:
-                action_obj = action_cls(*args, **default_kwargs)
-            self.acts.append(action_obj)
+    if ns.recheck_repo:
+        if ns.import_path or ns.analyze_path:
+            raise ValueError(
+                'Multiple actions are forbidden.')
 
-    def __call__(self, *args, **kwargs):
-        for act in self.acts:
-            try:
-                act.__call__(*args, **kwargs)
-            except NotImplementedError:
-                pass
+    if ns.apply:
+        if not ns.recheck_repo:
+            raise ValueError(
+                '--apply requires --recheck')
 
-    @staticmethod
-    def get_action_class(action=None):
-        action_classes = {
-            None: argparse._StoreAction,
-            'store': argparse._StoreAction,
-            'store_const': argparse._StoreConstAction,
-            'store_true': argparse._StoreTrueAction,
-            'store_false': argparse._StoreFalseAction,
-            'append': argparse._AppendAction,
-            'append_const': argparse._AppendConstAction,
-            'count': argparse._CountAction,
-            'help': argparse._HelpAction,
-            'version': argparse._VersionAction,
-            'parsers': argparse._SubParsersAction
-        }
-        return action_classes.get(action)
-
-    @staticmethod
-    def split_custom_args(kwargs):
-        defaults = ['option_strings', 'dest', 'nargs', 'const',
-                    'default', 'type', 'choices', 'required', 'help',
-                    'metavar']
-        split_args = ({}, {})
-        for k, v in kwargs.items():
-            split_args[k in defaults][k] = v
-        return split_args
-
-    def __repr__(self):
-        defaults = super().__repr__()[:-1]
-        customs = ', {}={{}}' * len(self.custom_kwargs)
-        customs = customs.format(*self.custom_kwargs.keys())
-        customs = customs.format(*self.custom_kwargs.values())
-        actions = [type(x).__name__ for x in self.acts]
-        actions = ', acts={!r})'.format(actions)
-        return defaults + customs + actions
-
-
-class ChangeRequirementsAction(argparse.Action):
-    def __init__(self, *args, require=None, free=None, **kwargs):
-        _, default_kwargs = MultiAction.split_custom_args(kwargs)
-        super().__init__(*args, **default_kwargs)
-        self.require = require if require else []
-        self.free = free if free else []
-
-    def __call__(self, parser, *args, **kwargs):
-        for action in parser._actions:
-            if action.dest in self.require:
-                action.required = True
-            if action.dest in self.free:
-                action.required = False
-        try:
-            return super().__call__(parser, *args, **kwargs)
-        except NotImplementedError:
-            pass
-
-    def __repr__(self):
-        defaults = super().__repr__()[:-1]
-        customs = 'require={!r}, free={!r}'
-        customs = customs.format(self.require, self.free)
-        return '{}, {})'.format(defaults, customs)
 
 
 if __name__ == "__main__":
