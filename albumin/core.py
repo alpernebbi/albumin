@@ -7,7 +7,7 @@ from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
 
 
-def import_(repo, import_path, timezone=None):
+def import_(repo, import_path, timezone=None, tags=None):
     current_branch = repo.branches[0]
 
     updates, remaining = get_datetime_updates(
@@ -35,6 +35,9 @@ def import_(repo, import_path, timezone=None):
         extension = os.path.splitext(file)[1]
         key = repo.annex.files[file]
         meta = repo.annex[key]
+        if tags:
+            for tag, value in tags.items():
+                meta[tag] = value
         dt = meta['datetime'].astimezone(pytz.utc)
         dt = dt.strftime('%Y%m%dT%H%M%SZ')
         for i in range(0, 100):
@@ -173,13 +176,12 @@ def get_datetime_updates(repo, update_path, timezone=None):
     return updates, remaining
 
 
-def apply_datetime_updates(repo, updates, **commons):
+def apply_datetime_updates(repo, updates, timezone=None):
     for key, (datum, _) in updates.items():
         repo.annex[key]['datetime'] = datum.datetime
         repo.annex[key]['datetime-method'] = datum.method
-        for k, v in commons.items():
-            if v:
-                repo.annex[key][k] = v
+        if timezone:
+            repo.annex[key]['timezone'] = timezone
 
 
 def get_repo_datetimes(repo, keys):

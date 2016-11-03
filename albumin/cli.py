@@ -21,10 +21,14 @@ def main(*args):
     if ns.timezone:
         ns.timezone = pytz.timezone(ns.timezone)
 
+    if ns.tags:
+        ns.tags = {x[0]: x[1] for x in (t.split('=') for t in ns.tags)}
+
     if ns.import_path:
         albumin.core.import_(ns.repo,
                              ns.import_path,
-                             timezone=ns.timezone)
+                             timezone=ns.timezone,
+                             tags=ns.tags)
     elif ns.analyze_path:
         albumin.core.analyze(ns.analyze_path,
                              repo=ns.repo,
@@ -89,6 +93,14 @@ def argument_parser():
         metavar='tz',
         help="assume pictures have dates in given timezone")
 
+    options.add_argument(
+        '--tags',
+        dest='tags',
+        action='store',
+        metavar='x=y',
+        nargs='+',
+        help="add aditional tags to all imported files")
+
     return parser
 
 
@@ -126,6 +138,19 @@ def validate_namespace(ns):
         if ns.timezone not in pytz.all_timezones:
             raise ValueError(
                 'Invalid timezone {}'.format(ns.timezone))
+
+    if ns.tags:
+        if not ns.import_path:
+            raise ValueError(
+                '--tags requires --import')
+        forbidden_tags = [
+            'datetime=', 'datetime-method=',
+            'year=', 'month=', 'day=',
+            'timezone=']
+        for tag in ns.tags:
+            if any(map(tag.__contains__, forbidden_tags)):
+                raise ValueError(
+                    'The following tag is forbidden: {}'.format(tag))
 
 
 if __name__ == "__main__":
