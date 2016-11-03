@@ -11,19 +11,6 @@ def main(*args):
     ns = parser.parse_args(*args)
     validate_namespace(ns)
 
-    if ns.repo_path:
-        repo = GitAnnexRepo(ns.repo_path)
-        ns.repo = repo
-        del ns.repo_path
-    else:
-        ns.repo = None
-
-    if ns.timezone:
-        ns.timezone = pytz.timezone(ns.timezone)
-
-    if ns.tags:
-        ns.tags = {x[0]: x[1] for x in (t.split('=') for t in ns.tags)}
-
     if ns.import_path:
         albumin.core.import_(ns.repo,
                              ns.import_path,
@@ -48,7 +35,7 @@ def argument_parser():
 
     positional.add_argument(
         'repo_path',
-        metavar='repo-path',
+        metavar='repo',
         nargs='?',
         help="path of the git-annex repository")
 
@@ -105,6 +92,9 @@ def argument_parser():
 
 
 def validate_namespace(ns):
+    if ns.repo:
+        ns.repo = GitAnnexRepo(ns.repo)
+
     if ns.import_path:
         if not ns.repo_path:
             raise ValueError(
@@ -138,17 +128,17 @@ def validate_namespace(ns):
         if ns.timezone not in pytz.all_timezones:
             raise ValueError(
                 'Invalid timezone {}'.format(ns.timezone))
+        ns.timezone = pytz.timezone(ns.timezone)
 
     if ns.tags:
+        ns.tags = {x[0]: x[1] for x in (t.split('=') for t in ns.tags)}
         if not ns.import_path:
             raise ValueError(
                 '--tags requires --import')
-        forbidden_tags = [
-            'datetime=', 'datetime-method=',
-            'year=', 'month=', 'day=',
-            'timezone=']
+        forbidden_tags = ['datetime', 'datetime-method',
+                          'year', 'month', 'day']
         for tag in ns.tags:
-            if any(map(tag.__contains__, forbidden_tags)):
+            if tag in forbidden_tags or 'lastchanged' in tag:
                 raise ValueError(
                     'The following tag is forbidden: {}'.format(tag))
 
