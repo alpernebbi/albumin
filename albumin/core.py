@@ -27,6 +27,11 @@ def import_(repo, import_path, timezone=None, tags=None):
 
     apply_datetime_updates(repo, updates, timezone=timezone)
 
+    if 'album' in tags:
+        album_name = tags['album']
+    else:
+        album_name = import_name
+
     repo.checkout('master')
     repo.cherry_pick('albumin-imports')
     batch_path = os.path.join(repo.path, batch_name)
@@ -43,7 +48,7 @@ def import_(repo, import_path, timezone=None, tags=None):
         for i in range(0, 100):
             try:
                 new_name = '{}{:02}{}'.format(dt, i, extension)
-                new_path = os.path.join(import_name, new_name)
+                new_path = os.path.join(album_name, new_name)
                 repo.move(file, new_path)
                 break
             except ValueError:
@@ -51,7 +56,7 @@ def import_(repo, import_path, timezone=None, tags=None):
         else:
             err_msg = 'Ran out of {}xx{} files'
             raise RuntimeError(err_msg.format(dt, extension))
-    repo.commit('Process batch {} ({})'.format(batch_name, import_name))
+    repo.commit('Process batch {} ({})'.format(batch_name, album_name))
 
     repo.checkout(current_branch)
 
