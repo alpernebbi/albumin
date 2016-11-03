@@ -34,8 +34,8 @@ def argument_parser():
     positional = parser.add_argument_group('Positional arguments')
 
     positional.add_argument(
-        'repo_path',
-        metavar='repo',
+        'repo',
+        metavar='repo_path',
         nargs='?',
         help="path of the git-annex repository")
 
@@ -96,7 +96,7 @@ def validate_namespace(ns):
         ns.repo = GitAnnexRepo(ns.repo)
 
     if ns.import_path:
-        if not ns.repo_path:
+        if not ns.repo:
             raise ValueError(
                 'Repository required for --import.')
         if ns.analyze_path or ns.recheck_repo:
