@@ -11,6 +11,13 @@ def main(*args):
     ns = parser.parse_args(*args)
     validate_namespace(ns)
 
+    if ns.interactive:
+        interactive(ns.repo, parser)
+    else:
+        take_action(ns)
+
+
+def take_action(ns):
     if ns.import_path:
         albumin.core.import_(ns.repo,
                              ns.import_path,
@@ -23,6 +30,18 @@ def main(*args):
     elif ns.recheck_repo:
         albumin.core.recheck(ns.repo,
                              apply=ns.apply)
+
+
+def interactive(repo, parser):
+    while True:
+        print('alb >>', end=' ')
+        user_cmd = input()
+        if user_cmd == 'exit':
+            return
+        ns = parser.parse_args(user_cmd.split())
+        ns.repo = repo
+        validate_namespace(ns)
+        take_action(ns)
 
 
 def argument_parser():
@@ -65,6 +84,12 @@ def argument_parser():
         action='store_true',
         help="recheck files in repo for new metadata")
 
+    actions.add_argument(
+        '--interactive',
+        dest='interactive',
+        action='store_true',
+        help="use albumin as an interactive tool")
+
     options = parser.add_argument_group('Options')
 
     options.add_argument(
@@ -92,24 +117,32 @@ def argument_parser():
 
 
 def validate_namespace(ns):
-    if ns.repo:
+    if ns.repo and not isinstance(ns.repo, GitAnnexRepo):
         ns.repo = GitAnnexRepo(ns.repo)
 
     if ns.import_path:
         if not ns.repo:
             raise ValueError(
                 'Repository required for --import.')
-        if ns.analyze_path or ns.recheck_repo:
+        if ns.analyze_path or ns.recheck_repo or ns.interactive:
             raise ValueError(
                 'Multiple actions are forbidden.')
 
     if ns.analyze_path:
-        if ns.import_path or ns.recheck_repo:
+        if ns.import_path or ns.recheck_repo or ns.interactive:
             raise ValueError(
                 'Multiple actions are forbidden.')
 
     if ns.recheck_repo:
-        if ns.import_path or ns.analyze_path:
+        if ns.import_path or ns.analyze_path or ns.interactive:
+            raise ValueError(
+                'Multiple actions are forbidden.')
+
+    if ns.interactive:
+        if not ns.repo:
+            raise ValueError(
+                '--interactive requires a repository')
+        if ns.import_path or ns.analyze_path or ns.recheck_repo:
             raise ValueError(
                 'Multiple actions are forbidden.')
 
