@@ -27,7 +27,7 @@ def import_(repo, import_path, timezone=None, tags=None):
 
     apply_datetime_updates(repo, updates, timezone=timezone)
 
-    if 'album' in tags:
+    if tags and 'album' in tags:
         album_name = tags['album']
     else:
         album_name = import_name
