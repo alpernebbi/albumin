@@ -1,7 +1,7 @@
 import os
 import pytz
+from datetime import datetime
 
-from albumin.utils import sequenced_folder_name
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
@@ -18,74 +18,58 @@ def import_(repo, import_path, timezone=None, tags=None):
         print('All files and info already in repo.')
         return
 
-    repo.checkout('albumin-imports')
-    repo.annex.import_(import_path)
+    album_keys = set()
+
+    repo.checkout('albumin')
+    timestamp = datetime.now(pytz.utc).strftime('%Y%m%dT%H%M%SZ')
+    album_record_path = os.path.join(repo.path, timestamp + '.txt')
+    with open(album_record_path, 'xt') as album_record:
+        print('# path: {}'.format(import_path), file=album_record)
+        print('# timezone: {}'.format(timezone), file=album_record)
+        if tags:
+            for tag, value in tags.items():
+                print('# {}: {}'.format(tag, value), file=album_record)
+        for path in sorted(files_in(import_path)):
+            key = repo.annex.calckey(path)
+            album_keys.add(key)
+            relpath = os.path.relpath(path, import_path)
+            print('{}: {}'.format(key, relpath), file=album_record)
+    repo.add(timestamp + '.txt')
     import_name = os.path.basename(import_path)
-    batch_name = sequenced_folder_name(repo.path)
-    repo.move(import_name, batch_name)
-    repo.commit("Import batch {} ({})".format(batch_name, import_name))
+    album_name = tags.get('album', import_name)
+    repo.commit('Record album {}'.format(album_name))
+
+    repo.checkout('master')
+    repo.annex.import_(import_path)
+    repo.rm(import_name)
 
     apply_datetime_updates(repo, updates, timezone=timezone)
 
-    if tags and 'album' in tags:
-        album_name = tags['album']
-    else:
-        album_name = import_name
-
-    repo.checkout('master')
-    repo.cherry_pick('albumin-imports')
-    batch_path = os.path.join(repo.path, batch_name)
-    batch_files = files_in(batch_path, relative=repo.path)
-    for file in batch_files:
-        extension = os.path.splitext(file)[1]
-        key = repo.annex.files[file]
+    for key in album_keys:
         meta = repo.annex[key]
         if tags:
             for tag, value in tags.items():
                 meta[tag] = value
+        extension = os.path.splitext(key)[1]
         dt = meta['datetime'].astimezone(pytz.utc)
         dt = dt.strftime('%Y%m%dT%H%M%SZ')
         for i in range(0, 100):
-            try:
-                new_name = '{}{:02}{}'.format(dt, i, extension)
-                new_path = os.path.join(album_name, new_name)
-                repo.move(file, new_path)
+            new_name = '{}{:02}{}'.format(dt, i, extension)
+            new_path = os.path.join(album_name, new_name)
+            new_abs_path = os.path.join(repo.path, new_path)
+            if os.path.exists(new_abs_path):
+                if repo.annex.lookupkey(new_path) == key:
+                    break
+                else:
+                    continue
+            else:
+                repo.annex.fromkey(key, new_path)
                 break
-            except ValueError:
-                continue
         else:
             err_msg = 'Ran out of {}xx{} files'
             raise RuntimeError(err_msg.format(dt, extension))
-    repo.commit('Process batch {} ({})'.format(batch_name, album_name))
-
-    repo.checkout(current_branch)
-
-
-def recheck(repo, apply=False):
-    current_branch = repo.branches[0]
-    repo.checkout('albumin-imports')
-
-    updates, remaining = get_datetime_updates(repo, repo.path)
-    if updates:
-        print("New information: ")
-        for file in sorted(repo.annex.files):
-            key = repo.annex.files[file]
-            if key in updates:
-                (datum, old) = updates[key]
-                print('    {}: {} => {}'.format(file, old, datum))
-                print('        (key: {})'.format(key))
-
-        if apply:
-            apply_datetime_updates(repo, updates)
-            print("Applied.")
-
-    if remaining:
-        print("Still no information: ")
-        for file in sorted(remaining):
-            print('    {}'.format(os.path.relpath(file, repo.path)))
-
-    if not updates and not remaining:
-        print("Everything is fine.")
+    repo.add(album_name)
+    repo.commit('Import album {}'.format(album_name))
 
     repo.checkout(current_branch)
 
