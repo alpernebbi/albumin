@@ -7,8 +7,6 @@ from datetime import datetime
 from datetime import tzinfo
 import pytz
 
-from albumin.utils import files_in
-
 
 class GitRepo:
     def __init__(self, path):

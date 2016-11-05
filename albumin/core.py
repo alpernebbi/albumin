@@ -57,13 +57,10 @@ def import_(repo, import_path, timezone=None, tags=None):
             new_name = '{}{:02}{}'.format(dt, i, extension)
             new_path = os.path.join(album_name, new_name)
             new_abs_path = os.path.join(repo.path, new_path)
-            if os.path.exists(new_abs_path):
-                if repo.annex.lookupkey(new_path) == key:
-                    break
-                else:
-                    continue
-            else:
+            if not os.path.exists(new_abs_path):
                 repo.annex.fromkey(key, new_path)
+                break
+            elif repo.annex.lookupkey(new_path) == key:
                 break
         else:
             err_msg = 'Ran out of {}xx{} files'
@@ -150,35 +147,29 @@ def get_datetime_updates(repo, update_path, timezone=None):
     updates = {}
     for key, datum in data.items():
         old_datum = repo_data.get(key)
-        if datum == old_datum:
-            if not timezone:
-                try:
-                    timezone_ = repo.annex[key]['timezone']
-                    datum.datetime = timezone_.localize(datum.datetime)
-                except:
-                    timezone_ = pytz.utc
-                    datum.datetime = timezone_.localize(datum.datetime)
-            if datum.datetime != old_datum.datetime:
-                updates[key] = (datum, repo_data.get(key))
-        else:
+        if not timezone:
+            timezone_ = repo.annex[key].get('timezone', pytz.utc)
+            datum.datetime = timezone_.localize(datum.datetime)
+        if datum != old_datum or datum.datetime != old_datum.datetime:
             updates[key] = (datum, repo_data.get(key))
     return updates, remaining
 
 
 def apply_datetime_updates(repo, updates, timezone=None):
     for key, (datum, _) in updates.items():
-        repo.annex[key]['datetime'] = datum.datetime
-        repo.annex[key]['datetime-method'] = datum.method
+        meta = repo.annex[key]
+        meta['datetime'] = datum.datetime
+        meta['datetime-method'] = datum.method
         if timezone:
-            repo.annex[key]['timezone'] = timezone
+            meta['timezone'] = timezone
 
 
 def get_repo_datetimes(repo, keys):
     data = {}
     for key in keys:
-        dt = repo.annex[key]['datetime']
-        method = repo.annex[key]['datetime-method']
-
+        meta = repo.annex[key]
+        dt = meta['datetime']
+        method = meta['datetime-method']
         try:
             data[key] = ImageDate(method, dt)
         except ValueError:
