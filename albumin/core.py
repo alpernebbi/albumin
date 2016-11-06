@@ -18,35 +18,35 @@ def import_(repo, import_path, timezone=None, tags=None):
         print('All files and info already in repo.')
         return
 
-    album_keys = set()
+    batch_keys = set()
+    timestamp = datetime.now(pytz.utc).strftime('%Y%m%dT%H%M%SZ')
 
     repo.checkout('albumin')
-    timestamp = datetime.now(pytz.utc).strftime('%Y%m%dT%H%M%SZ')
-    album_record_path = os.path.join(repo.path, timestamp + '.txt')
-    with open(album_record_path, 'xt') as album_record:
-        print('# path: {}'.format(import_path), file=album_record)
-        print('# timezone: {}'.format(timezone), file=album_record)
+    record_filename = timestamp + '.txt'
+    record_path = os.path.join(repo.path, record_filename)
+    with open(record_path, 'xt') as record:
+        print('# path: {}'.format(import_path), file=record)
+        print('# timezone: {}'.format(timezone), file=record)
         if tags:
             for tag, value in tags.items():
-                print('# {}: {}'.format(tag, value), file=album_record)
+                print('# {}: {}'.format(tag, value), file=record)
         for path in sorted(files_in(import_path)):
             key = repo.annex.calckey(path)
-            album_keys.add(key)
+            batch_keys.add(key)
             relpath = os.path.relpath(path, import_path)
-            print('{}: {}'.format(key, relpath), file=album_record)
-    repo.add(timestamp + '.txt')
-    import_name = os.path.basename(import_path)
-    album_name = tags.get('album', import_name)
-    repo.commit('Record album {}'.format(album_name))
+            print('{}: {}'.format(key, relpath), file=record)
+    repo.add(record_filename)
+    repo.commit('Record batch {}'.format(timestamp))
 
     repo.checkout('master')
     repo.annex.import_(import_path)
-    repo.rm(import_name)
+    repo.rm(os.path.basename(import_path))
 
     apply_datetime_updates(repo, updates, timezone=timezone)
 
-    for key in album_keys:
+    for key in batch_keys:
         meta = repo.annex[key]
+        meta['batch'] = timestamp
         if tags:
             for tag, value in tags.items():
                 meta[tag] = value
@@ -55,7 +55,7 @@ def import_(repo, import_path, timezone=None, tags=None):
         dt = dt.strftime('%Y%m%dT%H%M%SZ')
         for i in range(0, 100):
             new_name = '{}{:02}{}'.format(dt, i, extension)
-            new_path = os.path.join(album_name, new_name)
+            new_path = os.path.join(timestamp, new_name)
             new_abs_path = os.path.join(repo.path, new_path)
             if not os.path.exists(new_abs_path):
                 repo.annex.fromkey(key, new_path)
@@ -65,8 +65,8 @@ def import_(repo, import_path, timezone=None, tags=None):
         else:
             err_msg = 'Ran out of {}xx{} files'
             raise RuntimeError(err_msg.format(dt, extension))
-    repo.add(album_name)
-    repo.commit('Import album {}'.format(album_name))
+    repo.add(timestamp)
+    repo.commit('Import batch {}'.format(timestamp))
 
     repo.checkout(current_branch)
 
