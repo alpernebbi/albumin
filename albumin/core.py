@@ -148,7 +148,8 @@ def get_datetime_updates(repo, update_path, timezone=None):
     for key, datum in data.items():
         old_datum = repo_data.get(key)
         if not timezone:
-            timezone_ = repo.annex[key].get('timezone', pytz.utc)
+            timezone_ = repo.annex[key]['timezone']
+            timezone_ = timezone_ if timezone_ else pytz.utc
             datum.datetime = timezone_.localize(datum.datetime)
         if datum != old_datum or datum.datetime != old_datum.datetime:
             updates[key] = (datum, repo_data.get(key))
@@ -172,6 +173,6 @@ def get_repo_datetimes(repo, keys):
         method = meta['datetime-method']
         try:
             data[key] = ImageDate(method, dt)
-        except ValueError:
+        except (ValueError, AttributeError):
             data[key] = None
     return data
