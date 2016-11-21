@@ -32,7 +32,10 @@ def take_action(ns):
 def interactive(repo, parser):
     while True:
         print('alb >>', end=' ')
-        user_cmd = input()
+        try:
+            user_cmd = input()
+        except EOFError:
+            return
         if user_cmd == 'exit':
             return
         ns = parser.parse_args(user_cmd.split())
