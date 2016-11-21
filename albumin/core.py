@@ -168,11 +168,11 @@ def apply_datetime_updates(repo, updates, timezone=None):
 def get_repo_datetimes(repo, keys):
     data = {}
     for key in keys:
-        meta = repo.annex[key]
-        dt = meta['datetime']
-        method = meta['datetime-method']
         try:
+            meta = repo.annex[key]
+            dt = meta['datetime']
+            method = meta['datetime-method']
             data[key] = ImageDate(method, dt)
-        except (ValueError, AttributeError):
+        except (ValueError, KeyError, AttributeError):
             data[key] = None
     return data
