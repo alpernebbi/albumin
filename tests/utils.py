@@ -3,8 +3,7 @@ import functools
 import tarfile
 import shutil
 
-from albumin.gitrepo import GitRepo
-from albumin.gitrepo import GitAnnexRepo
+from albumin.repo import AlbuminRepo
 
 
 def with_folder(tar_path=None, files=None, param='temp_folder'):
@@ -29,9 +28,7 @@ def with_repo(tar_path=None, annex=False, param='repo'):
         @functools.wraps(func)
         @with_folder(tar_path, param='repo_path')
         def wrapper(*args, **kwargs):
-            repo = GitRepo(kwargs['repo_path'])
-            if annex:
-                GitAnnexRepo.make_annex(repo)
+            repo = AlbuminRepo(kwargs['repo_path'])
             del kwargs['repo_path']
             kwargs[param] = repo
             try:

@@ -141,15 +141,15 @@ def get_datetime_updates(repo, update_path, timezone=None):
                 raise conflict_error(key, data[key], data)
         data[key] = max(data.get(key), datum)
 
-    common_keys = repo.annex.keys & set(data)
+    common_keys = repo.annex.keys() & set(data)
     repo_data = get_repo_datetimes(repo, common_keys)
 
     updates = {}
     for key, datum in data.items():
         old_datum = repo_data.get(key)
         if not timezone:
-            timezone_ = repo.annex[key]['timezone']
-            timezone_ = timezone_ if timezone_ else pytz.utc
+            metadata = repo.annex.get(key, {})
+            timezone_ = metadata.get('timezone', pytz.utc)
             datum.datetime = timezone_.localize(datum.datetime)
         if datum != old_datum or datum.datetime != old_datum.datetime:
             updates[key] = (datum, repo_data.get(key))

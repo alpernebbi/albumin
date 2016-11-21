@@ -3,7 +3,7 @@ import argparse
 import pytz
 
 import albumin.core
-from albumin.gitrepo import GitAnnexRepo
+from albumin.repo import AlbuminRepo
 
 
 def main(*args):
@@ -102,8 +102,8 @@ def argument_parser():
 
 
 def validate_namespace(ns):
-    if ns.repo and not isinstance(ns.repo, GitAnnexRepo):
-        ns.repo = GitAnnexRepo(ns.repo)
+    if ns.repo and not isinstance(ns.repo, AlbuminRepo):
+        ns.repo = AlbuminRepo(ns.repo)
 
     if ns.import_path:
         if not ns.repo:
