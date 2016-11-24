@@ -1,9 +1,7 @@
 from unittest import TestCase
-from argparse import ArgumentError
-from tests.utils import with_repo
-from tests.utils import with_folder
 
 from albumin.cli import argument_parser
+from albumin.cli import validate_namespace
 
 
 class TestAlbuminParser(TestCase):
@@ -24,15 +22,17 @@ class TestAlbuminParser(TestCase):
 
     def test_repo(self):
         args = self.parse([self.rpath])
-        assert args.repo_path == self.rpath
+        validate_namespace(args)
+        assert args.repo.path == self.rpath
 
     def test_no_repo(self):
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(ValueError) as cm:
             args = self.parse(['--import', self.ipath])
-        assert cm.exception.code == 2
+            validate_namespace(args)
 
     def test_import(self):
         args = self.parse([self.rpath, '--import', self.ipath])
+        validate_namespace(args)
         assert args.import_path == self.ipath
 
     def test_import_nopath(self):
@@ -47,17 +47,19 @@ class TestAlbuminParser(TestCase):
 
     def test_analyze_norepo(self):
         args = self.parse(['--analyze', self.ipath])
+        validate_namespace(args)
 
     def test_analyze_repo(self):
         args = self.parse([self.rpath, '--analyze', self.ipath])
+        validate_namespace(args)
 
     def test_analyze_import(self):
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(ValueError) as cm:
             args = self.parse([self.rpath, '--analyze', self.ipath,
                                '--import', self.ipath])
-        assert cm.exception.code == 2
+            validate_namespace(args)
 
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(ValueError) as cm:
             args = self.parse([self.rpath, '--import', self.ipath,
                                '--analyze', self.ipath])
-        assert cm.exception.code == 2
+            validate_namespace(args)
