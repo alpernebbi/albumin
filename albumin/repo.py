@@ -40,7 +40,10 @@ class AlbuminMetadata(GitAnnexMetadata):
         metadata.__class__ = cls
 
     def __getitem__(self, meta_key):
-        value = super().__getitem__(meta_key)[0]
+        try:
+            value = super().__getitem__(meta_key)[0]
+        except IndexError:
+            raise KeyError(meta_key)
 
         if meta_key == 'datetime':
             dt_naive = datetime.strptime(value, '%Y-%m-%d@%H-%M-%S')
