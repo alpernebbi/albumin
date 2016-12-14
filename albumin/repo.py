@@ -14,32 +14,118 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from datetime import datetime
 from datetime import tzinfo
 import pytz
 
-from git_annex_adapter import GitRepo
 from git_annex_adapter import GitAnnex
 from git_annex_adapter import GitAnnexMetadata
+from git_annex_adapter import RepeatedProcess
 
 
-class AlbuminRepo(GitRepo):
+class AlbuminRepo:
     def __init__(self, path, create=True):
-        super().__init__(path, create=create)
-        self.annex = AlbuminAnnex(self, create=create)
+        self.annex = AlbuminAnnex(path, create=create)
 
-    @classmethod
-    def make_annex(cls, repo, create=False):
-        repo.annex = AlbuminAnnex(repo, create=create)
-        repo.__class__ = cls
+        git = RepeatedProcess('git', workdir=path)
+        root_path = git('rev-parse', '--show-toplevel').strip()
+
+        git._workdir = root_path
+        self.path = root_path
+        self._git = git
+
+    @property
+    def status(self):
+        return self._git('status', '-s')
+
+    @property
+    def branches(self):
+        branch_list = []
+        current_exists = False
+        for branch in self._git('branch', '--list').splitlines():
+            if branch[0] == '*':
+                branch_list.insert(0, branch[2:])
+                current_exists = True
+            else:
+                branch_list.append(branch[2:])
+        if branch_list and not current_exists:
+            raise RuntimeError(
+                'No current branch found among: \n'
+                '    {}\n    in {}'.format(branch_list, self.path))
+        return tuple(branch_list)
+
+    def add(self, path):
+        return self._git('add', path)
+
+    def rm(self, path):
+        return self._git('rm', '-rf', path)
+
+    def move(self, src, dest, overwrite=False, merge=True):
+        abs_src = os.path.join(self.path, src)
+        abs_dest = os.path.join(self.path, dest)
+
+        def files_in(dir_path):
+            exclude = ['.git']
+            for root, dirs, files in os.walk(dir_path, topdown=True):
+                dirs[:] = [d for d in dirs if d not in exclude]
+                relative_root = os.path.relpath(root, start=self.path)
+                for f in files:
+                    yield os.path.join(relative_root, f)
+
+        if os.path.isdir(abs_src) and os.path.isdir(abs_dest) and merge:
+            for src_ in files_in(abs_src):
+                dest_ = os.path.join(dest, os.path.relpath(src_, src))
+                self.move(src_, dest_, overwrite=overwrite)
+            return
+
+        if os.path.isfile(abs_dest):
+            if os.path.samefile(abs_src, abs_dest) or overwrite:
+                self._git('rm', dest)
+            else:
+                raise ValueError(
+                    "Destination {} already exists.".format(dest))
+
+        abs_dest_dir = os.path.dirname(abs_dest)
+        os.makedirs(abs_dest_dir, exist_ok=True)
+        self._git('mv', src, dest)
+
+        abs_src_dir = os.path.dirname(abs_src)
+        if not os.listdir(abs_src_dir):
+            os.removedirs(abs_src_dir)
+
+    def checkout(self, branch, new_branch=True):
+        command = ['checkout', branch]
+        if new_branch and branch not in self.branches:
+            command.insert(1, '-b')
+        return self._git(*command)
+
+    def commit(self, message, add=True, allow_empty=False):
+        command = ['commit', '-m', message]
+        if add: command.append('-a')
+        if allow_empty: command.append('--allow-empty')
+        return self._git(*command)
+
+    def cherry_pick(self, branch):
+        return self._git("cherry-pick", branch)
+
+    def stash(self, pop=False):
+        command = ['stash']
+        if pop: command.append('pop')
+        return self._git(*command)
+
+    @property
+    def tree_hash(self):
+        commit = self._git('cat-file', 'commit', 'HEAD').split()
+        return commit[commit.index('tree') + 1]
 
     def __repr__(self):
-        return 'GitAnnexRepo(path={!r})'.format(self.path)
+        return 'GitRepo(path={!r})'.format(self.path)
 
 
 class AlbuminAnnex(GitAnnex):
-    def __init__(self, repo, create=True):
-        super().__init__(repo, create=create)
+    def __init__(self, path, create=True):
+        super().__init__(path, create=create)
 
     def __getitem__(self, map_key):
         metadata = super().__getitem__(map_key)
