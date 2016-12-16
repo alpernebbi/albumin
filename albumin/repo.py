@@ -100,10 +100,13 @@ class AlbuminRepo:
             command.insert(1, '-b')
         return self._git(*command)
 
-    def commit(self, message, add=True, allow_empty=False):
+    def commit(self, message, add=True, allow_empty=False, date=None):
         command = ['commit', '-m', message]
         if add: command.append('-a')
         if allow_empty: command.append('--allow-empty')
+        if date:
+            command.append('--date')
+            command.append('{:%Y-%m-%DT%H:%M:%SZ}'.format(date))
         return self._git(*command)
 
     def cherry_pick(self, branch):
