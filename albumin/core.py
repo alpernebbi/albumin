@@ -17,6 +17,7 @@
 import os
 import pytz
 from datetime import datetime
+from collections import OrderedDict
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
@@ -24,7 +25,8 @@ from albumin.imdate import ImageDate
 
 
 def import_(repo, import_path, timezone=None, tags=None):
-    current_branch = repo.branches[0]
+    if not tags:
+        tags = {}
 
     updates, remaining = get_datetime_updates(
         repo, import_path, timezone=timezone)
@@ -34,44 +36,28 @@ def import_(repo, import_path, timezone=None, tags=None):
         print('All files and info already in repo.')
         return
 
-    batch_keys = set()
-    timestamp = datetime.now(pytz.utc).strftime('%Y%m%dT%H%M%SZ')
+    timestamp = datetime.now(pytz.utc)
+    batch = '{:%Y%m%dT%H%M%SZ}'.format(timestamp)
 
-    repo.checkout('albumin')
-    record_filename = timestamp + '.txt'
-    record_path = os.path.join(repo.path, record_filename)
-    with open(record_path, 'xt') as record:
-        print('# path: {}'.format(import_path), file=record)
-        print('# timezone: {}'.format(timezone), file=record)
-        if tags:
-            for tag, value in tags.items():
-                print('# {}: {}'.format(tag, value), file=record)
-        for path in sorted(files_in(import_path)):
-            key = repo.annex.calckey(path)
-            batch_keys.add(key)
-            relpath = os.path.relpath(path, import_path)
-            print('{}: {}'.format(key, relpath), file=record)
-    repo.add(record_filename)
-    repo.commit('Record batch {}'.format(timestamp))
-
-    repo.checkout('master')
     repo.annex.import_(import_path)
-    repo.rm(os.path.basename(import_path))
+    repo.annex.clear_metadata_cache()
+    import_dest = os.path.join(repo.path, os.path.basename(import_path))
+    imported_files = OrderedDict(
+        (path, repo.annex.lookupkey(path))
+        for path in sorted(files_in(import_dest, relative=repo.path))
+    )
 
     apply_datetime_updates(repo, updates, timezone=timezone)
 
-    for key in batch_keys:
+    for key in imported_files.values():
         meta = repo.annex[key]
-        meta['batch'] = timestamp
-        if tags:
-            for tag, value in tags.items():
-                meta[tag] = value
+        meta.update(**tags, batch=batch)
         extension = os.path.splitext(key)[1]
         dt = meta['datetime'].astimezone(pytz.utc)
         dt = dt.strftime('%Y%m%dT%H%M%SZ')
         for i in range(0, 100):
             new_name = '{}{:02}{}'.format(dt, i, extension)
-            new_path = os.path.join(timestamp, new_name)
+            new_path = os.path.join(batch, new_name)
             new_abs_path = os.path.join(repo.path, new_path)
             if not os.path.exists(new_abs_path):
                 repo.annex.fromkey(key, new_path)
@@ -81,10 +67,34 @@ def import_(repo, import_path, timezone=None, tags=None):
         else:
             err_msg = 'Ran out of {}xx{} files'
             raise RuntimeError(err_msg.format(dt, extension))
-    repo.add(timestamp)
-    repo.commit('Import batch {}'.format(timestamp))
 
-    repo.checkout(current_branch)
+    repo.rm(import_dest)
+    repo.add(batch)
+    repo.annex.clear_metadata_cache()
+
+    commit_msg = "\n".join((
+        'Batch: {}'.format(batch),
+        '',
+        'Imported from:',
+        '{}'.format(import_path),
+        '',
+        'Tags: ',
+        'batch: {}'.format(batch),
+        'timezone: {}'.format(timezone),
+        *('{}: {}'.format(tag, value) for tag, value in tags.items()),
+        '',
+        'Imported files: ',
+        *('{}: {}'.format(key, path)
+          for path, key in imported_files.items()
+        ),
+        '',
+        'Updates: ',
+        *('{}: {} => {}'.format(key, old, new) if old
+          else '{}: {}'.format(key, new)
+          for key, (new, old) in updates.items()
+        ),
+    ))
+    repo.commit(commit_msg, date=timestamp)
 
 
 def analyze(analyze_path, repo=None, timezone=None):
