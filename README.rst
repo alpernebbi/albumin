@@ -24,6 +24,7 @@ Requirements
 - git-annex-adapter_
 - pyexiftool_
 - pytz
+- pygit2
 
 .. _git-annex-adapter: https://github.com/alpernebbi/git-annex-adapter
 .. _pyexiftool: https://github.com/smarnach/pyexiftool

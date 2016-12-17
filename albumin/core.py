@@ -16,6 +16,7 @@
 
 import os
 import pytz
+import pygit2
 from datetime import datetime
 from collections import OrderedDict
 
@@ -41,10 +42,12 @@ def import_(repo, import_path, timezone=None, tags=None):
 
     repo.annex.import_(import_path)
     repo.annex.clear_metadata_cache()
-    import_dest = os.path.join(repo.path, os.path.basename(import_path))
+    import_dest = os.path.join(
+        repo.workdir, os.path.basename(import_path)
+    )
     imported_files = OrderedDict(
         (path, repo.annex.lookupkey(path))
-        for path in sorted(files_in(import_dest, relative=repo.path))
+        for path in sorted(files_in(import_dest, relative=repo.workdir))
     )
 
     apply_datetime_updates(repo, updates, timezone=timezone)
@@ -58,7 +61,7 @@ def import_(repo, import_path, timezone=None, tags=None):
         for i in range(0, 100):
             new_name = '{}{:02}{}'.format(dt, i, extension)
             new_path = os.path.join(batch, new_name)
-            new_abs_path = os.path.join(repo.path, new_path)
+            new_abs_path = os.path.join(repo.workdir, new_path)
             if not os.path.exists(new_abs_path):
                 repo.annex.fromkey(key, new_path)
                 break
@@ -68,9 +71,20 @@ def import_(repo, import_path, timezone=None, tags=None):
             err_msg = 'Ran out of {}xx{} files'
             raise RuntimeError(err_msg.format(dt, extension))
 
-    repo.rm(import_dest)
-    repo.add(batch)
+    repo.index.read()
+    for file in imported_files:
+        repo.index.remove(file)
+        os.remove(os.path.join(repo.workdir, file))
+    os.removedirs(import_dest)
+    repo.index.add_all([batch])
+    repo.index.write()
     repo.annex.clear_metadata_cache()
+
+    commit_author = pygit2.Signature(
+        repo.default_signature.name,
+        repo.default_signature.email,
+        int(timestamp.timestamp())
+    )
 
     commit_msg = "\n".join((
         'Batch: {}'.format(batch),
@@ -94,7 +108,15 @@ def import_(repo, import_path, timezone=None, tags=None):
           for key, (new, old) in updates.items()
         ),
     ))
-    repo.commit(commit_msg, date=timestamp)
+
+    commit = repo.create_commit(
+        'HEAD',
+        commit_author,
+        commit_author,
+        commit_msg,
+        repo.index.write_tree(),
+        [repo.head.get_object().hex]
+    )
 
 
 def analyze(analyze_path, repo=None, timezone=None):
