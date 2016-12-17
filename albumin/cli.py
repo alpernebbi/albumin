@@ -16,16 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import sys
 import argparse
 import pytz
 
 import albumin.core
 from albumin.repo import AlbuminRepo
+from albumin.hooks import git_hooks
 
 
 def main(*args):
+    if not args:
+        name, *args = sys.argv
+        name = os.path.basename(name)
+
+        if name in git_hooks:
+            args = ('--git-hook', name, *args)
+
     parser = argument_parser()
-    ns = parser.parse_args(*args)
+    ns = parser.parse_args(args)
     validate_namespace(ns)
 
     if ns.interactive:
@@ -44,6 +54,12 @@ def take_action(ns):
         albumin.core.analyze(ns.analyze_path,
                              repo=ns.repo,
                              timezone=ns.timezone)
+    elif ns.git_hook:
+        hook, *hook_args = ns.git_hook
+        try:
+            git_hooks[hook](*hook_args)
+        except KeyError:
+            raise ValueError('Invalid hook: {}'.format(hook)) from None
 
 
 def interactive(repo, parser):
@@ -101,6 +117,15 @@ def argument_parser():
         action='store_true',
         help="use albumin as an interactive tool")
 
+    actions.add_argument(
+        '--git-hook',
+        dest='git_hook',
+        action='store',
+        metavar=('h', 'x'),
+        nargs='+',
+        help="use albumin as a git hook"
+    )
+
     options = parser.add_argument_group('Options')
 
     options.add_argument(
@@ -122,6 +147,17 @@ def argument_parser():
 
 
 def validate_namespace(ns):
+    if ns.git_hook:
+        if ns.repo:
+            raise ValueError(
+                'Can\'t manually specify repo for --git-hook')
+        if ns.import_path or ns.analyze_path or ns.interactive:
+            raise ValueError(
+                '--git-hook can\'t be used with other actions')
+        if ns.timezone or ns.tags:
+            raise ValueError(
+                '--git-hook can\'t be used with other options')
+
     if ns.repo and not isinstance(ns.repo, AlbuminRepo):
         ns.repo = AlbuminRepo(ns.repo)
 
