@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import pytz
 from exiftool import ExifTool
 from datetime import datetime
 
@@ -56,10 +57,16 @@ class ImageDate:
 
     @property
     def timezone(self):
-        return self.datetime.tzname()
+        try:
+            return self.datetime.tzinfo.tzname(None)
+        except:
+            return None
 
     @timezone.setter
     def timezone(self, tz):
+        if isinstance(tz, str):
+            tz = pytz.timezone(tz)
+
         if self.timezone:
             self.datetime = self.datetime.astimezone(tz)
         else:
