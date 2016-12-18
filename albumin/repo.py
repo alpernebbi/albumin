@@ -38,6 +38,9 @@ class AlbuminRepo(pygit2.Repository):
         super().__init__(git_path)
         self.annex = AlbuminAnnex(self.workdir, create=create)
 
+    def __repr__(self):
+        return 'AlbuminRepo(path={!r})'.format(self.path)
+
 
 class AlbuminAnnex(GitAnnex):
     def __init__(self, path, create=True):
@@ -47,6 +50,9 @@ class AlbuminAnnex(GitAnnex):
         metadata = super().__getitem__(map_key)
         AlbuminMetadata.make_parsed(metadata)
         return metadata
+
+    def __repr__(self):
+        return 'AlbuminAnnex(path={!r})'.format(self.path)
 
 
 class AlbuminMetadata(GitAnnexMetadata):
@@ -95,5 +101,5 @@ class AlbuminMetadata(GitAnnexMetadata):
         super().__setitem__(meta_key, [value])
 
     def __repr__(self):
-        repr_ = 'GitAnnexParsedMetadata(key={!r}, path={!r})'
-        return repr_.format(self.key, self.annex.repo.path)
+        repr_ = 'AlbuminMetadata(key={!r}, file={!r})'
+        return repr_.format(self.key, self.file)
