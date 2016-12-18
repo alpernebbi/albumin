@@ -23,8 +23,8 @@ def analyze_date(*file_paths, timezone=None):
     remaining = {f for f in file_paths if f not in results}
 
     if timezone:
-        for file, imdate in results.items():
-            imdate.datetime = timezone.localize(imdate.datetime)
+        for imdate in results.values():
+            imdate.timezone = timezone
 
     return results, remaining
 
@@ -58,6 +58,17 @@ class ImageDate:
                     continue
             else:
                 raise ValueError(datetime_)
+
+    @property
+    def timezone(self):
+        return self.datetime.tzname()
+
+    @timezone.setter
+    def timezone(self, tz):
+        if self.timezone:
+            self.datetime = self.datetime.astimezone(tz)
+        else:
+            self.datetime = tz.localize(self.datetime)
 
     @property
     def order(self):
