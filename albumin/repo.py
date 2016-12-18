@@ -24,15 +24,19 @@ from git_annex_adapter import GitAnnexMetadata
 
 
 class AlbuminRepo(pygit2.Repository):
-    def __init__(self, path):
+    def __init__(self, path, create=True):
         try:
             git_path = pygit2.discover_repository(path)
         except KeyError:
-            AlbuminAnnex.init_path(path)
-            git_path = pygit2.discover_repository(path)
+            if create:
+                AlbuminAnnex.init_path(path)
+                git_path = pygit2.discover_repository(path)
+            else:
+                msg = 'Not in a git repo: {}'.format(path)
+                raise ValueError(msg) from None
 
         super().__init__(git_path)
-        self.annex = AlbuminAnnex(self.workdir)
+        self.annex = AlbuminAnnex(self.workdir, create=create)
 
 
 class AlbuminAnnex(GitAnnex):
