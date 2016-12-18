@@ -90,6 +90,8 @@ def pre_commit_hook():
     repo.index.write()
     repo.checkout()
 
+    repo.annex.pre_commit()
+
 
 def pre_commit_annex_hook():
     pass
