@@ -143,7 +143,10 @@ def analyze(analyze_path, repo=None, timezone=None):
             if rem_data.get(keys[file], None):
                 remaining.remove(file)
     else:
-        additions, remaining = analyze_date(*files, timezone=timezone)
+        additions, remaining = analyze_date(*files)
+        if timezone:
+            for imdate in additions.values():
+                imdate.timezone = timezone
 
     modified = set.union(*map(set, (overwrites, additions, remaining)))
     redundants = set(files) - modified
@@ -173,8 +176,12 @@ def analyze(analyze_path, repo=None, timezone=None):
 
 def get_datetime_updates(repo, files, timezone=None):
     files = list(files)
-    file_data, remaining = analyze_date(*files, timezone=timezone)
+    file_data, remaining = analyze_date(*files)
     keys = {f: repo.annex.calckey(f) for f in files}
+
+    if timezone:
+        for imdate in file_data.values():
+            imdate.timezone = timezone
 
     def conflict_error(key, data_1, data_2):
         err_msg = ('Conflicting results for file: \n'

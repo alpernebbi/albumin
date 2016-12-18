@@ -44,9 +44,11 @@ def pre_commit_hook():
         return 2
 
     file_data, remaining = analyze_date(
-        *(os.path.join(repo.workdir, file) for file in new_files),
-        timezone=timezone
+        *(os.path.join(repo.workdir, file) for file in new_files)
     )
+
+    for imdate in file_data.values():
+        imdate.timezone = timezone
 
     if remaining:
         print("No information about: ")
