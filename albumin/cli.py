@@ -56,11 +56,11 @@ def take_action(ns):
                              timezone=ns.timezone)
     elif ns.git_hook:
         hook, *hook_args = ns.git_hook
-        try:
-            status = git_hooks[hook](*hook_args)
-        except KeyError:
-            raise ValueError('Invalid hook: {}'.format(hook)) from None
 
+        if hook not in git_hooks:
+            raise ValueError('Invalid hook: {}'.format(hook))
+
+        status = git_hooks[hook](*hook_args)
         if status:
             print("Aborting commit.")
             sys.exit(status)
