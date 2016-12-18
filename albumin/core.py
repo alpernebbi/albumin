@@ -30,7 +30,7 @@ def import_(repo, import_path, timezone=None, tags=None):
         tags = {}
 
     updates, remaining = get_datetime_updates(
-        repo, import_path, timezone=timezone)
+        repo, files_in(import_path), timezone=timezone)
     if remaining:
         raise NotImplementedError(remaining)
     if not updates:
@@ -127,7 +127,7 @@ def analyze(analyze_path, repo=None, timezone=None):
         print('Compared to repo: {}'.format(repo.path))
         keys = {f: repo.annex.calckey(f) for f in files}
         updates, remaining = get_datetime_updates(
-            repo, analyze_path, timezone=timezone)
+            repo, files, timezone=timezone)
 
         for file, key in keys.items():
             if key in updates:
@@ -171,8 +171,8 @@ def analyze(analyze_path, repo=None, timezone=None):
             print('    {}'.format(file))
 
 
-def get_datetime_updates(repo, update_path, timezone=None):
-    files = list(files_in(update_path))
+def get_datetime_updates(repo, files, timezone=None):
+    files = list(files)
     file_data, remaining = analyze_date(*files, timezone=timezone)
     keys = {f: repo.annex.calckey(f) for f in files}
 
