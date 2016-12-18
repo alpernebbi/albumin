@@ -57,9 +57,13 @@ def take_action(ns):
     elif ns.git_hook:
         hook, *hook_args = ns.git_hook
         try:
-            git_hooks[hook](*hook_args)
+            status = git_hooks[hook](*hook_args)
         except KeyError:
             raise ValueError('Invalid hook: {}'.format(hook)) from None
+
+        if status:
+            print("Aborting commit.")
+            sys.exit(status)
 
 
 def interactive(repo, parser):
