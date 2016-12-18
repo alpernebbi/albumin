@@ -15,13 +15,80 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import pygit2
 import pytz
+from datetime import datetime
 
 from albumin.repo import AlbuminRepo
+from albumin.imdate import analyze_date
 
 
 def pre_commit_hook():
-    pass
+    repo = current_repo()
+    diff = repo.diff('HEAD', cached=True)
+    new_files = (
+        d.delta.new_file.path for d in diff
+        if d.delta.status == pygit2.GIT_STATUS_INDEX_NEW
+    )
+    new_files = {f: repo.annex.lookupkey(f) for f in new_files}
+
+    try:
+        timezone = get_timezone(repo)
+        print('Timezone: {}'.format(timezone))
+    except pytz.exceptions.UnknownTimeZoneError as err:
+        print("Invalid time zone: {}".format(err))
+        return 1
+    except KeyError:
+        print("Please set albumin.timezone:")
+        print("    $ git -c albumin.timezone=UTC commit ...")
+        return 2
+
+    file_data, remaining = analyze_date(
+        *(os.path.join(repo.workdir, file) for file in new_files),
+        timezone=timezone
+    )
+
+    if remaining:
+        print("No information about: ")
+        for file in sorted(remaining):
+            print('    {}'.format(file))
+        return 3
+
+    timestamp = datetime.now(pytz.utc)
+    batch = '{:%Y%m%dT%H%M%SZ}'.format(timestamp)
+
+    repo.index.read()
+
+    for file, key in new_files.items():
+        abs_file = os.path.join(repo.workdir, file)
+        extension = os.path.splitext(key)[1]
+        dt = file_data[abs_file].datetime.astimezone(pytz.utc)
+        dt = dt.strftime('%Y%m%dT%H%M%SZ')
+        for i in range(0, 100):
+            new_name = '{}{:02}{}'.format(dt, i, extension)
+            new_path = os.path.join(batch, new_name)
+            new_abs_path = os.path.join(repo.workdir, new_path)
+            if not os.path.exists(new_abs_path):
+                file_idx = repo.index[file]
+                file_idx.path = new_path
+                repo.index.add(file_idx)
+                repo.index.remove(file)
+                os.remove(os.path.join(repo.workdir, file))
+                break
+            elif repo.annex.lookupkey(new_path) == key:
+                break
+        else:
+            err_msg = 'Ran out of {}xx{} files'
+            raise RuntimeError(err_msg.format(dt, extension))
+
+    for dir_ in set(map(os.path.dirname, new_files)):
+        try:
+            os.removedirs(dir_)
+        except:
+            pass
+
+    repo.index.write()
+    repo.checkout()
 
 
 def pre_commit_annex_hook():
