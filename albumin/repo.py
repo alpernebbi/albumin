@@ -21,6 +21,7 @@ import pygit2
 
 from git_annex_adapter import GitAnnex
 from git_annex_adapter import GitAnnexMetadata
+from albumin.imdate import ImageDate
 
 
 class AlbuminRepo(pygit2.Repository):
@@ -62,6 +63,26 @@ class AlbuminMetadata(GitAnnexMetadata):
     @classmethod
     def make_parsed(cls, metadata):
         metadata.__class__ = cls
+
+    @property
+    def imdate(self):
+        dt = self.get('datetime', None)
+        method = self.get('datetime-method', None)
+        try:
+            return ImageDate(method, dt)
+        except (ValueError, AttributeError):
+            return None
+
+    @imdate.setter
+    def imdate(self, new):
+        if not isinstance(new, ImageDate):
+            raise ValueError(new)
+
+        if new >= self.imdate:
+            self['datetime'] = new.datetime
+            self['datetime-method'] = new.method
+            if new.timezone:
+                self['timezone'] = new.timezone
 
     def __getitem__(self, meta_key):
         try:

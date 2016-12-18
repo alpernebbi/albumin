@@ -22,7 +22,6 @@ from collections import OrderedDict
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
-from albumin.imdate import ImageDate
 
 
 def import_(repo, import_path, timezone=None, tags=None):
@@ -50,7 +49,8 @@ def import_(repo, import_path, timezone=None, tags=None):
         for path in sorted(files_in(import_dest, relative=repo.workdir))
     )
 
-    apply_datetime_updates(repo, updates, timezone=timezone)
+    for key, (new_imdate, _) in updates.items():
+        repo.annex[key].imdate = new_imdate
 
     for key in imported_files.values():
         meta = repo.annex[key]
@@ -138,7 +138,7 @@ def analyze(analyze_path, repo=None, timezone=None):
                     additions[file] = datum
 
         rem_keys = {k for f, k in keys.items() if f in remaining}
-        rem_data = get_repo_datetimes(repo, rem_keys)
+        rem_data = {key: repo.annex[key].imdate for key in rem_keys}
         for file in remaining.copy():
             if rem_data.get(keys[file], None):
                 remaining.remove(file)
@@ -190,7 +190,7 @@ def get_datetime_updates(repo, files, timezone=None):
         data[key] = max(data.get(key), datum)
 
     common_keys = repo.annex.keys() & set(data)
-    repo_data = get_repo_datetimes(repo, common_keys)
+    repo_data = {key: repo.annex[key].imdate for key in common_keys}
 
     updates = {}
     for key, datum in data.items():
@@ -202,25 +202,3 @@ def get_datetime_updates(repo, files, timezone=None):
         if datum != old_datum or datum.datetime != old_datum.datetime:
             updates[key] = (datum, repo_data.get(key))
     return updates, remaining
-
-
-def apply_datetime_updates(repo, updates, timezone=None):
-    for key, (datum, _) in updates.items():
-        meta = repo.annex[key]
-        meta['datetime'] = datum.datetime
-        meta['datetime-method'] = datum.method
-        if timezone:
-            meta['timezone'] = timezone
-
-
-def get_repo_datetimes(repo, keys):
-    data = {}
-    for key in keys:
-        try:
-            meta = repo.annex[key]
-            dt = meta['datetime']
-            method = meta['datetime-method']
-            data[key] = ImageDate(method, dt)
-        except (ValueError, KeyError, AttributeError):
-            data[key] = None
-    return data
