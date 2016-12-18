@@ -14,6 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import pytz
+
+from albumin.repo import AlbuminRepo
+
 
 def pre_commit_hook():
     pass
@@ -33,6 +38,27 @@ def commit_msg_hook(editmsg):
 
 def post_commit_hook():
     pass
+
+
+def current_repo():
+    return AlbuminRepo(os.getcwd(), create=False)
+
+
+def git_config_overrides():
+    try:
+        git_config_parameters = os.getenv('GIT_CONFIG_PARAMETERS')
+        git_config_lines = git_config_parameters[1:-1].split('\' \'')
+        return dict(config.split('=') for config in git_config_lines)
+    except:
+        return {}
+
+
+def get_timezone(repo=None):
+    tz = git_config_overrides().get('albumin.timezone', '')
+    if repo and not tz:
+        tz = repo.config['albumin.timezone']
+        print('Using default timezone.')
+    return pytz.timezone(tz)
 
 
 git_hooks = {
