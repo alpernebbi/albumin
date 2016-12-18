@@ -18,7 +18,6 @@ import os
 import pytz
 import pygit2
 from datetime import datetime
-from collections import OrderedDict
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
@@ -28,26 +27,26 @@ def import_(repo, import_path, timezone=None, tags=None):
     if not tags:
         tags = {}
 
+    timestamp = datetime.now(pytz.utc)
+    batch = '{:%Y%m%dT%H%M%SZ}'.format(timestamp)
+
+    imported_files = repo.annex.import_(import_path)
+    repo.annex.clear_metadata_cache()
+    import_dest = os.path.join(
+        repo.workdir, os.path.basename(import_path)
+    )
+
     updates, remaining = get_datetime_updates(
-        repo, files_in(import_path), timezone=timezone)
+        repo,
+        {os.path.join(repo.workdir, f): k
+         for f, k in imported_files.items()},
+        timezone=timezone
+    )
     if remaining:
         raise NotImplementedError(remaining)
     if not updates:
         print('All files and info already in repo.')
         return
-
-    timestamp = datetime.now(pytz.utc)
-    batch = '{:%Y%m%dT%H%M%SZ}'.format(timestamp)
-
-    repo.annex.import_(import_path)
-    repo.annex.clear_metadata_cache()
-    import_dest = os.path.join(
-        repo.workdir, os.path.basename(import_path)
-    )
-    imported_files = OrderedDict(
-        (path, repo.annex.lookupkey(path))
-        for path in sorted(files_in(import_dest, relative=repo.workdir))
-    )
 
     for key, (new_imdate, _) in updates.items():
         repo.annex[key].imdate = new_imdate
@@ -127,7 +126,7 @@ def analyze(analyze_path, repo=None, timezone=None):
         print('Compared to repo: {}'.format(repo.path))
         keys = {f: repo.annex.calckey(f) for f in files}
         updates, remaining = get_datetime_updates(
-            repo, files, timezone=timezone)
+            repo, keys, timezone=timezone)
 
         for file, key in keys.items():
             if key in updates:
@@ -175,37 +174,35 @@ def analyze(analyze_path, repo=None, timezone=None):
 
 
 def get_datetime_updates(repo, files, timezone=None):
-    files = list(files)
     file_data, remaining = analyze_date(*files)
-    keys = {f: repo.annex.calckey(f) for f in files}
 
     if timezone:
         for imdate in file_data.values():
             imdate.timezone = timezone
 
-    def conflict_error(key, data_1, data_2):
-        err_msg = ('Conflicting results for file: \n'
-                   '    {}:\n    {} vs {}.')
-        return RuntimeError(err_msg.format(key, data_1, data_2))
+    def conflicts(a, b):
+        return a.method == b.method and a.datetime != b.datetime
 
-    data = {}
-    for file, datum in file_data.items():
-        key = keys[file]
-        if key in data and data[key] == datum:
-            if data[key].datetime != datum.datetime:
-                raise conflict_error(key, data[key], data)
-        data[key] = max(data.get(key), datum)
-
-    common_keys = repo.annex.keys() & set(data)
-    repo_data = {key: repo.annex[key].imdate for key in common_keys}
+    key_data = {}
+    for file, key in files.items():
+        imdate = file_data[file]
+        imdate_ = key_data.get(key, imdate)
+        if conflicts(imdate, imdate_):
+            raise RuntimeError(file, imdate, imdate_)
+        key_data[key] = max(imdate, imdate_)
 
     updates = {}
-    for key, datum in data.items():
-        old_datum = repo_data.get(key)
-        if not timezone:
-            metadata = repo.annex.get(key, {})
-            timezone_ = metadata.get('timezone', pytz.utc)
-            datum.datetime = timezone_.localize(datum.datetime)
-        if datum != old_datum or datum.datetime != old_datum.datetime:
-            updates[key] = (datum, repo_data.get(key))
+    for key, new in key_data.items():
+        try:
+            old = repo.annex.get(key).imdate
+            if not new.timezone:
+                new.timezone = old.timezone
+        except:
+            old = None
+
+        if (new > old) \
+                or (new == old and new.datetime != old.datetime) \
+                or (new.timezone != old.timezone):
+            updates[key] = (max(new, old), old)
+
     return updates, remaining
