@@ -41,7 +41,11 @@ class AlbuminRepo(pygit2.Repository):
         super().__init__(git_path)
         self.annex = AlbuminAnnex(self.workdir, create=create)
 
-    def imdate_diff(self, files, timezone=None):
+    def imdate_diff(self, files=None, timezone=None):
+        if not files:
+            files = self.new_files()
+            files = {self.abs_path(f): k for f, k in files.items()}
+
         file_data, remaining = analyze_date(*files)
 
         if timezone:
