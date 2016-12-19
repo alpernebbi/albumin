@@ -176,6 +176,7 @@ class AlbuminRepo(pygit2.Repository):
 
         self.checkout_index()
         self.annex.fix()
+        self.index.read()
         return batch
 
     def abs_path(self, path):
