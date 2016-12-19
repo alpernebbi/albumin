@@ -31,9 +31,9 @@ def import_(repo, import_path, timezone=None, tags=None):
     imported_files = repo.annex.import_(import_path)
     repo.annex.clear_metadata_cache()
 
+    repo.timezone = timezone
     updates, remaining = repo.imdate_diff(
-        {repo.abs_path(f): k for f, k in imported_files.items()},
-        timezone=timezone
+        {repo.abs_path(f): k for f, k in imported_files.items()}
     )
     if remaining:
         raise NotImplementedError(remaining)
@@ -59,7 +59,8 @@ def analyze(analyze_path, repo=None, timezone=None):
 
     if repo:
         files = {f: repo.annex.calckey(f) for f in files}
-        updates, remaining = repo.imdate_diff(files, timezone=timezone)
+        repo.timezone = timezone
+        updates, remaining = repo.imdate_diff(files)
 
     else:
         files = {f: f for f in files}

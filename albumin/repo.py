@@ -76,14 +76,12 @@ class AlbuminRepo(pygit2.Repository):
 
         self._session_timezone = tz
 
-    def imdate_diff(self, files=None, timezone=None):
+    def imdate_diff(self, files=None):
         if not files:
             files = self.new_files()
             files = {self.abs_path(f): k for f, k in files.items()}
 
-        if not timezone:
-            timezone = self.timezone
-
+        timezone = self.timezone
         file_data, remaining = analyze_date(*files)
 
         for file in remaining.copy():
