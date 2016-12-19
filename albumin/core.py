@@ -127,23 +127,28 @@ def report(files, updates, remaining):
     remaining = sorted_dict({f: files[f] for f in remaining})
 
     for file, key in remaining.items():
-        yield '[F?] {key}: {file}'.format(file=file, key=key)
+        yield '[F?] {key}: '.format(key=key)
+        yield '[..]   {file}'.format(file=file)
 
     for file, (key, _) in additions.items():
-        yield '[F+] {key}: {file}'.format(file=file, key=key)
+        yield '[F+] {key}: '.format(key=key)
+        yield '[..]   {file}'.format(file=file)
 
     for file, (key, _, _) in overwrites.items():
-        yield '[F!] {key}: {file}'.format(file=file, key=key)
+        yield '[F!] {key}: '.format(key=key)
+        yield '[..]   {file}'.format(file=file)
 
     for file, key in redundants.items():
-        yield '[F=] {key}: {file}'.format(file=file, key=key)
+        yield '[F=] {key}: '.format(key=key)
+        yield '[..]   {file}'.format(file=file)
 
     for _, (key, new) in additions.items():
-        yield '[T+] {key}: {new}'.format(key=key, new=new)
+        yield '[T+] {key}: '.format(key=key)
+        yield '[..]   {new}'.format(new=new)
 
     for _, (key, new, old) in overwrites.items():
-        yield '[T!] {key}: {new}'.format(key=key, new=new)
-        yield '[..] {} vs: {old}'.format(' ' * (len(key)-3), old=old)
+        yield '[T!] {key}: '.format(key=key)
+        yield '[..]   {new} <- {old}'.format(new=new, old=old)
 
 
 def format_report(report):
