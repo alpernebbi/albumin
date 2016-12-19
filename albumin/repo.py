@@ -56,8 +56,8 @@ class AlbuminRepo(pygit2.Repository):
             return a.method == b.method and a.datetime != b.datetime
 
         key_data = {}
-        for file, key in files.items():
-            imdate = file_data[file]
+        for file, imdate in file_data.items():
+            key = files[file]
             imdate_ = key_data.get(key, imdate)
             if conflicts(imdate, imdate_):
                 raise RuntimeError(file, imdate, imdate_)
