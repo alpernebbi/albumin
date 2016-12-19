@@ -64,6 +64,9 @@ class ImageDate:
 
     @timezone.setter
     def timezone(self, tz):
+        if tz is None:
+            return
+
         if isinstance(tz, str):
             tz = pytz.timezone(tz)
 
