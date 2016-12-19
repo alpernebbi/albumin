@@ -18,6 +18,7 @@ import os
 import pytz
 import pygit2
 from datetime import datetime
+from collections import OrderedDict
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
@@ -63,16 +64,8 @@ def import_(repo, import_path, timezone=None, tags=None):
         'timezone: {}'.format(timezone),
         *('{}: {}'.format(tag, value) for tag, value in tags.items()),
         '',
-        'Imported files: ',
-        *('{}: {}'.format(key, path)
-          for path, key in imported_files.items()
-        ),
-        '',
-        'Updates: ',
-        *('{}: {} => {}'.format(key, old, new) if old
-          else '{}: {}'.format(key, new)
-          for key, (new, old) in updates.items()
-        ),
+        'Report:',
+        *report(imported_files, updates, remaining)
     ))
 
     commit = repo.create_commit(
@@ -87,56 +80,92 @@ def import_(repo, import_path, timezone=None, tags=None):
 
 def analyze(analyze_path, repo=None, timezone=None):
     files = list(files_in(analyze_path))
-    overwrites, additions, keys = {}, {}, {}
 
     if repo:
-        print('Compared to repo: {}'.format(repo.path))
-        keys = {f: repo.annex.calckey(f) for f in files}
-        updates, remaining = repo.imdate_diff(keys, timezone=timezone)
+        files = {f: repo.annex.calckey(f) for f in files}
+        updates, remaining = repo.imdate_diff(files, timezone=timezone)
+        report_ = report(files, updates, remaining)
 
-        for file, key in keys.items():
-            if key in updates:
-                datum, old_datum = updates[key]
-                if old_datum:
-                    overwrites[file] = (datum, old_datum, key)
-                else:
-                    additions[file] = datum
-
-        rem_keys = {k for f, k in keys.items() if f in remaining}
-        rem_data = {key: repo.annex[key].imdate for key in rem_keys}
-        for file in remaining.copy():
-            if rem_data.get(keys[file], None):
-                remaining.remove(file)
     else:
+        files = {f: f for f in files}
         additions, remaining = analyze_date(*files)
+
         if timezone:
             for imdate in additions.values():
                 imdate.timezone = timezone
 
-    modified = set.union(*map(set, (overwrites, additions, remaining)))
-    redundants = set(files) - modified
-    if redundants:
-        print("No new information: ")
-        for file in sorted(redundants):
-            print('    {}'.format(file))
+        updates = {f: (v, None) for f, v in additions.items()}
+        report_ = report(files, updates, remaining)
+        report_ = filter(lambda s: not s.startswith('[F+]'), report_)
 
-    if additions:
-        print("New files: ")
-        for file in sorted(additions):
-            datum = additions[file]
-            print('    {}: {}'.format(file, datum))
-
-    if overwrites:
-        print("New information: ")
-        for file in sorted(overwrites):
-            (datum, old_datum, key) = overwrites[file]
-            print('    {}: {} => {}'.format(file, old_datum, datum))
-            print('        (from {})'.format(key))
-
-    if remaining:
-        print("No information: ")
-        for file in sorted(remaining):
-            print('    {}'.format(file))
+    report_ = format_report(report_)
+    print(*report_, sep='\n')
 
 
+def report(files, updates, remaining):
+    overwrites, additions, redundants = {}, {}, {}
+
+    for file, key in files.items():
+        new, old = updates.get(key, (None, None))
+        if new and old:
+            overwrites[file] = (key, new, old)
+        elif new:
+            additions[file] = (key, new)
+        elif file not in remaining:
+            redundants[file] = key
+
+    def sort_key(t):
+        path, _ = t
+        return os.path.split(path)
+
+    def sorted_dict(d):
+        return OrderedDict(sorted(d.items(), key=sort_key))
+
+    overwrites = sorted_dict(overwrites)
+    additions = sorted_dict(additions)
+    redundants = sorted_dict(redundants)
+    remaining = sorted_dict({f: files[f] for f in remaining})
+
+    for file, key in remaining.items():
+        yield '[F?] {key}: {file}'.format(file=file, key=key)
+
+    for file, (key, _) in additions.items():
+        yield '[F+] {key}: {file}'.format(file=file, key=key)
+
+    for file, (key, _, _) in overwrites.items():
+        yield '[F!] {key}: {file}'.format(file=file, key=key)
+
+    for file, key in redundants.items():
+        yield '[F=] {key}: {file}'.format(file=file, key=key)
+
+    for _, (key, new) in additions.items():
+        yield '[T+] {key}: {new}'.format(key=key, new=new)
+
+    for _, (key, new, old) in overwrites.items():
+        yield '[T!] {key}: {new}'.format(key=key, new=new)
+        yield '[..] {} vs: {old}'.format(' ' * (len(key)-3), old=old)
+
+
+def format_report(report):
+    sections = {
+        '[F?]': 'No Information:',
+        '[F+]': 'New Files:',
+        '[F!]': 'Updated Files:',
+        '[F=]': 'Redundant Files:',
+        '[T+]': 'Datetime Additions:',
+        '[T!]': 'Datetime Overwrites:',
+    }
+    current = None
+
+    for line in report:
+        prefix = line[:4]
+        section = sections.get(prefix, current)
+
+        if current != section:
+            if current:
+                yield ''
+            current = section
+            yield current
+
+        yield '  ' + line[5:]
 
