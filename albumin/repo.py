@@ -179,6 +179,24 @@ class AlbuminRepo(pygit2.Repository):
         self.index.read()
         return batch
 
+    def commit(self, message, timestamp=None):
+        if not timestamp:
+            timestamp = datetime.now(pytz.utc)
+
+        author = pygit2.Signature(
+            self.default_signature.name,
+            self.default_signature.email,
+            int(timestamp.timestamp())
+        )
+
+        commit = self.create_commit(
+            'HEAD', author, author, message,
+            self.index.write_tree(),
+            [self.head.get_object().hex]
+        )
+
+        return commit
+
     def abs_path(self, path):
         return os.path.join(self.workdir, path)
 

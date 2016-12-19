@@ -47,25 +47,11 @@ def import_(repo, import_path, timezone=None, tags=None):
     batch = repo.arrange_by_imdates()
     timestamp = datetime.strptime(batch, '%Y%m%dT%H%M%SZ')
 
-    commit_author = pygit2.Signature(
-        repo.default_signature.name,
-        repo.default_signature.email,
-        int(timestamp.timestamp())
-    )
-
     title = 'Batch: {}'.format(batch)
     tags_ = '\n'.join('{}: {}'.format(t, v) for t, v in tags.items())
     report_ = '\n'.join(report(imported_files, updates, remaining))
     commit_msg = '\n\n'.join((title, tags_, report_))
-
-    commit = repo.create_commit(
-        'HEAD',
-        commit_author,
-        commit_author,
-        commit_msg,
-        repo.index.write_tree(),
-        [repo.head.get_object().hex]
-    )
+    repo.commit(commit_msg, timestamp=timestamp)
 
 
 def analyze(analyze_path, repo=None, timezone=None):
