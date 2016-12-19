@@ -74,6 +74,12 @@ class AlbuminRepo(pygit2.Repository):
 
         file_data, remaining = analyze_date(*files)
 
+        for file in remaining.copy():
+            key = files[file]
+            meta = self.annex.get(key, None)
+            if meta and meta.imdate:
+                remaining.remove(file)
+
         if timezone:
             for imdate in file_data.values():
                 imdate.timezone = timezone
