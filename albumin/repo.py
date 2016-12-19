@@ -69,6 +69,9 @@ class AlbuminRepo(pygit2.Repository):
             files = self.new_files()
             files = {self.abs_path(f): k for f, k in files.items()}
 
+        if not timezone:
+            timezone = self.timezone
+
         file_data, remaining = analyze_date(*files)
 
         if timezone:
