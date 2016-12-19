@@ -74,6 +74,19 @@ class AlbuminRepo(pygit2.Repository):
 
         return updates, remaining
 
+    def new_files(self, keys=True):
+        self.index.read()
+        diff = self.diff('HEAD', cached=True)
+        files = (
+            d.delta.new_file.path for d in diff
+            if d.delta.status == pygit2.GIT_STATUS_INDEX_NEW
+        )
+
+        if keys:
+            return {file: self.annex.lookupkey(file) for file in files}
+        else:
+            return files
+
     def __repr__(self):
         return 'AlbuminRepo(path={!r})'.format(self.path)
 

@@ -25,12 +25,7 @@ from albumin.imdate import analyze_date
 
 def pre_commit_hook():
     repo = current_repo()
-    diff = repo.diff('HEAD', cached=True)
-    new_files = (
-        d.delta.new_file.path for d in diff
-        if d.delta.status == pygit2.GIT_STATUS_INDEX_NEW
-    )
-    new_files = {f: repo.annex.lookupkey(f) for f in new_files}
+    new_files = repo.new_files()
 
     try:
         timezone = get_timezone(repo)
