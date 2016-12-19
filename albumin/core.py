@@ -96,7 +96,7 @@ def analyze(analyze_path, repo=None, timezone=None):
 
         updates = {f: (v, None) for f, v in additions.items()}
         report_ = report(files, updates, remaining)
-        report_ = filter(lambda s: not s.startswith('[F+]'), report_)
+        report_ = filter_report(report_, '[F+]')
 
     report_ = format_report(report_)
     print(*report_, sep='\n')
@@ -149,6 +149,22 @@ def report(files, updates, remaining):
     for _, (key, new, old) in overwrites.items():
         yield '[T!] {key}: '.format(key=key)
         yield '[..]   {new} <- {old}'.format(new=new, old=old)
+
+
+def filter_report(report, *remove):
+    filter_dots = False
+
+    for line in report:
+        prefix = line[:4]
+
+        if prefix == '[..]' and filter_dots:
+            continue
+
+        filter_dots = prefix in remove
+        if prefix in remove:
+            continue
+
+        yield line
 
 
 def format_report(report):
