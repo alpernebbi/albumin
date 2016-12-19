@@ -36,8 +36,7 @@ def import_(repo, import_path, timezone=None, tags=None):
         repo.workdir, os.path.basename(import_path)
     )
 
-    updates, remaining = get_datetime_updates(
-        repo,
+    updates, remaining = repo.imdate_diff(
         {os.path.join(repo.workdir, f): k
          for f, k in imported_files.items()},
         timezone=timezone
@@ -125,8 +124,7 @@ def analyze(analyze_path, repo=None, timezone=None):
     if repo:
         print('Compared to repo: {}'.format(repo.path))
         keys = {f: repo.annex.calckey(f) for f in files}
-        updates, remaining = get_datetime_updates(
-            repo, keys, timezone=timezone)
+        updates, remaining = repo.imdate_diff(keys, timezone=timezone)
 
         for file, key in keys.items():
             if key in updates:
@@ -173,36 +171,4 @@ def analyze(analyze_path, repo=None, timezone=None):
             print('    {}'.format(file))
 
 
-def get_datetime_updates(repo, files, timezone=None):
-    file_data, remaining = analyze_date(*files)
 
-    if timezone:
-        for imdate in file_data.values():
-            imdate.timezone = timezone
-
-    def conflicts(a, b):
-        return a.method == b.method and a.datetime != b.datetime
-
-    key_data = {}
-    for file, key in files.items():
-        imdate = file_data[file]
-        imdate_ = key_data.get(key, imdate)
-        if conflicts(imdate, imdate_):
-            raise RuntimeError(file, imdate, imdate_)
-        key_data[key] = max(imdate, imdate_)
-
-    updates = {}
-    for key, new in key_data.items():
-        try:
-            old = repo.annex.get(key).imdate
-            if not new.timezone:
-                new.timezone = old.timezone
-        except:
-            old = None
-
-        if (new > old) \
-                or (new == old and new.datetime != old.datetime) \
-                or (new.timezone != old.timezone):
-            updates[key] = (max(new, old), old)
-
-    return updates, remaining

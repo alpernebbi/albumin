@@ -21,6 +21,7 @@ import pygit2
 
 from git_annex_adapter import GitAnnex
 from git_annex_adapter import GitAnnexMetadata
+from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
 
 
@@ -38,6 +39,40 @@ class AlbuminRepo(pygit2.Repository):
 
         super().__init__(git_path)
         self.annex = AlbuminAnnex(self.workdir, create=create)
+
+    def imdate_diff(self, files, timezone=None):
+        file_data, remaining = analyze_date(*files)
+
+        if timezone:
+            for imdate in file_data.values():
+                imdate.timezone = timezone
+
+        def conflicts(a, b):
+            return a.method == b.method and a.datetime != b.datetime
+
+        key_data = {}
+        for file, key in files.items():
+            imdate = file_data[file]
+            imdate_ = key_data.get(key, imdate)
+            if conflicts(imdate, imdate_):
+                raise RuntimeError(file, imdate, imdate_)
+            key_data[key] = max(imdate, imdate_)
+
+        updates = {}
+        for key, new in key_data.items():
+            try:
+                old = self.annex.get(key).imdate
+                if not new.timezone:
+                    new.timezone = old.timezone
+            except:
+                old = None
+
+            if (new > old) \
+                    or (new == old and new.datetime != old.datetime) \
+                    or (new.timezone != old.timezone):
+                updates[key] = (max(new, old), old)
+
+        return updates, remaining
 
     def __repr__(self):
         return 'AlbuminRepo(path={!r})'.format(self.path)
