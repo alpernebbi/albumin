@@ -53,20 +53,10 @@ def import_(repo, import_path, timezone=None, tags=None):
         int(timestamp.timestamp())
     )
 
-    commit_msg = "\n".join((
-        'Batch: {}'.format(batch),
-        '',
-        'Imported from:',
-        '{}'.format(import_path),
-        '',
-        'Tags: ',
-        'batch: {}'.format(batch),
-        'timezone: {}'.format(timezone),
-        *('{}: {}'.format(tag, value) for tag, value in tags.items()),
-        '',
-        'Report:',
-        *report(imported_files, updates, remaining)
-    ))
+    title = 'Batch: {}'.format(batch)
+    tags_ = '\n'.join('{}: {}'.format(t, v) for t, v in tags.items())
+    report_ = '\n'.join(report(imported_files, updates, remaining))
+    commit_msg = '\n\n'.join((title, tags_, report_))
 
     commit = repo.create_commit(
         'HEAD',
