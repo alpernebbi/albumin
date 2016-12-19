@@ -27,12 +27,8 @@ def import_(repo, import_path, timezone=None, tags=None):
     if not tags:
         tags = {}
 
-    timestamp = datetime.now(pytz.utc)
-    batch = '{:%Y%m%dT%H%M%SZ}'.format(timestamp)
-
     imported_files = repo.annex.import_(import_path)
     repo.annex.clear_metadata_cache()
-    import_dest = repo.abs_path(os.path.basename(import_path))
 
     updates, remaining = repo.imdate_diff(
         {repo.abs_path(f): k for f, k in imported_files.items()},
@@ -47,7 +43,8 @@ def import_(repo, import_path, timezone=None, tags=None):
     for key, (new_imdate, _) in updates.items():
         repo.annex[key].imdate = new_imdate
 
-    repo.arrange_by_imdates()
+    batch = repo.arrange_by_imdates()
+    timestamp = datetime.strptime(batch, '%Y%m%dT%H%M%SZ')
 
     commit_author = pygit2.Signature(
         repo.default_signature.name,
