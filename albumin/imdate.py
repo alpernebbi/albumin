@@ -102,7 +102,9 @@ class ImageDate:
         return repr_.format(self.method, self.datetime)
 
     def __str__(self):
-        return '{} ({})'.format(self.datetime, self.method)
+        return '{:%Y-%m-%d %H:%M:%S} @ ({}) ({})'.format(
+            self.datetime, self.timezone, self.method
+        )
 
 
 def from_exif(*file_paths):
