@@ -50,8 +50,13 @@ class AlbuminRepo(pygit2.Repository):
         super().__init__(git_path)
         self.annex = AlbuminAnnex(self.workdir, create=create)
 
+        self._session_timezone = None
+
     @property
     def timezone(self):
+        if self._session_timezone:
+            return self._session_timezone
+
         try:
             tz = self.config['albumin.timezone']
         except KeyError:
@@ -63,6 +68,13 @@ class AlbuminRepo(pygit2.Repository):
             pass
 
         return pytz.timezone(tz) if tz else tz
+
+    @timezone.setter
+    def timezone(self, tz):
+        if isinstance(tz, str):
+            tz = pytz.timezone(tz)
+
+        self._session_timezone = tz
 
     def imdate_diff(self, files=None, timezone=None):
         if not files:
