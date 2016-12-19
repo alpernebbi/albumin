@@ -38,9 +38,7 @@ def pre_commit_hook():
         print("    $ git -c albumin.timezone=UTC commit ...")
         return 2
 
-    file_data, remaining = analyze_date(
-        *(os.path.join(repo.workdir, file) for file in new_files)
-    )
+    file_data, remaining = analyze_date(*map(repo.abs_path, new_files))
 
     for imdate in file_data.values():
         imdate.timezone = timezone
@@ -57,20 +55,20 @@ def pre_commit_hook():
     repo.index.read()
 
     for file, key in new_files.items():
-        abs_file = os.path.join(repo.workdir, file)
+        abs_file = repo.abs_path(file)
         extension = os.path.splitext(key)[1]
         dt = file_data[abs_file].datetime.astimezone(pytz.utc)
         dt = dt.strftime('%Y%m%dT%H%M%SZ')
         for i in range(0, 100):
             new_name = '{}{:02}{}'.format(dt, i, extension)
             new_path = os.path.join(batch, new_name)
-            new_abs_path = os.path.join(repo.workdir, new_path)
+            new_abs_path = repo.abs_path(new_path)
             if not os.path.exists(new_abs_path):
                 file_idx = repo.index[file]
                 file_idx.path = new_path
                 repo.index.add(file_idx)
                 repo.index.remove(file)
-                os.remove(os.path.join(repo.workdir, file))
+                os.remove(repo.abs_path(file))
                 break
             elif repo.annex.lookupkey(new_path) == key:
                 break

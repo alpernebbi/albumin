@@ -32,13 +32,10 @@ def import_(repo, import_path, timezone=None, tags=None):
 
     imported_files = repo.annex.import_(import_path)
     repo.annex.clear_metadata_cache()
-    import_dest = os.path.join(
-        repo.workdir, os.path.basename(import_path)
-    )
+    import_dest = repo.abs_path(os.path.basename(import_path))
 
     updates, remaining = repo.imdate_diff(
-        {os.path.join(repo.workdir, f): k
-         for f, k in imported_files.items()},
+        {repo.abs_path(f): k for f, k in imported_files.items()},
         timezone=timezone
     )
     if remaining:
@@ -59,7 +56,7 @@ def import_(repo, import_path, timezone=None, tags=None):
         for i in range(0, 100):
             new_name = '{}{:02}{}'.format(dt, i, extension)
             new_path = os.path.join(batch, new_name)
-            new_abs_path = os.path.join(repo.workdir, new_path)
+            new_abs_path = repo.abs_path(new_path)
             if not os.path.exists(new_abs_path):
                 repo.annex.fromkey(key, new_path)
                 break
@@ -72,7 +69,7 @@ def import_(repo, import_path, timezone=None, tags=None):
     repo.index.read()
     for file in imported_files:
         repo.index.remove(file)
-        os.remove(os.path.join(repo.workdir, file))
+        os.remove(repo.abs_path(file))
     os.removedirs(import_dest)
     repo.index.add_all([batch])
     repo.index.write()

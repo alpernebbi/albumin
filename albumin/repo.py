@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from datetime import datetime
 from datetime import tzinfo
 import pytz
@@ -86,6 +87,12 @@ class AlbuminRepo(pygit2.Repository):
             return {file: self.annex.lookupkey(file) for file in files}
         else:
             return files
+
+    def abs_path(self, path):
+        return os.path.join(self.workdir, path)
+
+    def rel_path(self, path):
+        return os.path.relpath(path, start=self.workdir)
 
     def __repr__(self):
         return 'AlbuminRepo(path={!r})'.format(self.path)
