@@ -92,6 +92,59 @@ class AlbuminRepo(pygit2.Repository):
         else:
             return files
 
+    def index_move(self, src, dst):
+        idx = self.index[src]
+        self.index.remove(src)
+        idx.path = dst
+        self.index.add(idx)
+
+    def arrange_by_imdates(self, imdates=None, batch=None):
+        if not imdates:
+            imdates = {}
+
+        if not batch:
+            timestamp = datetime.now(pytz.utc)
+            batch = '{:%Y%m%dT%H%M%SZ}'.format(timestamp)
+
+        def datetime_name(key):
+            imdate = imdates.get(key, self.annex[key].imdate)
+            utc = imdate.datetime.astimezone(pytz.utc)
+            ext = os.path.splitext(key)[1]
+            return '{:%Y%m%dT%H%M%SZ}{{:02}}{}'.format(utc, ext)
+
+        def move_file(file, key, dest):
+            if not os.path.exists(self.abs_path(dest)):
+                self.index_move(file, dest)
+                return dest
+
+            elif self.annex.lookupkey(dest) == key:
+                self.index.remove(file)
+                return dest
+
+        files = self.new_files()
+
+        self.index.read()
+        for file, key in files.items():
+            name_fmt = os.path.join(batch, datetime_name(key))
+
+            for i in range(0, 100):
+                if move_file(file, key, name_fmt.format(i)):
+                    os.remove(self.abs_path(file))
+                    break
+            else:
+                err_msg = 'Ran out of {} files'
+                raise RuntimeError(err_msg.format(name_fmt))
+        self.index.write()
+
+        for folder in set(map(os.path.dirname, files)):
+            try:
+                os.removedirs(folder)
+            except OSError:
+                pass
+
+        self.checkout_index()
+        self.annex.fix()
+
     def abs_path(self, path):
         return os.path.join(self.workdir, path)
 

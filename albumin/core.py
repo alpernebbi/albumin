@@ -47,33 +47,7 @@ def import_(repo, import_path, timezone=None, tags=None):
     for key, (new_imdate, _) in updates.items():
         repo.annex[key].imdate = new_imdate
 
-    for key in imported_files.values():
-        meta = repo.annex[key]
-        meta.update(**tags, batch=batch)
-        extension = os.path.splitext(key)[1]
-        dt = meta['datetime'].astimezone(pytz.utc)
-        dt = dt.strftime('%Y%m%dT%H%M%SZ')
-        for i in range(0, 100):
-            new_name = '{}{:02}{}'.format(dt, i, extension)
-            new_path = os.path.join(batch, new_name)
-            new_abs_path = repo.abs_path(new_path)
-            if not os.path.exists(new_abs_path):
-                repo.annex.fromkey(key, new_path)
-                break
-            elif repo.annex.lookupkey(new_path) == key:
-                break
-        else:
-            err_msg = 'Ran out of {}xx{} files'
-            raise RuntimeError(err_msg.format(dt, extension))
-
-    repo.index.read()
-    for file in imported_files:
-        repo.index.remove(file)
-        os.remove(repo.abs_path(file))
-    os.removedirs(import_dest)
-    repo.index.add_all([batch])
-    repo.index.write()
-    repo.annex.clear_metadata_cache()
+    repo.arrange_by_imdates()
 
     commit_author = pygit2.Signature(
         repo.default_signature.name,

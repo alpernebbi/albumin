@@ -49,42 +49,7 @@ def pre_commit_hook():
             print('    {}'.format(file))
         return 3
 
-    timestamp = datetime.now(pytz.utc)
-    batch = '{:%Y%m%dT%H%M%SZ}'.format(timestamp)
-
-    repo.index.read()
-
-    for file, key in new_files.items():
-        abs_file = repo.abs_path(file)
-        extension = os.path.splitext(key)[1]
-        dt = file_data[abs_file].datetime.astimezone(pytz.utc)
-        dt = dt.strftime('%Y%m%dT%H%M%SZ')
-        for i in range(0, 100):
-            new_name = '{}{:02}{}'.format(dt, i, extension)
-            new_path = os.path.join(batch, new_name)
-            new_abs_path = repo.abs_path(new_path)
-            if not os.path.exists(new_abs_path):
-                file_idx = repo.index[file]
-                file_idx.path = new_path
-                repo.index.add(file_idx)
-                repo.index.remove(file)
-                os.remove(repo.abs_path(file))
-                break
-            elif repo.annex.lookupkey(new_path) == key:
-                break
-        else:
-            err_msg = 'Ran out of {}xx{} files'
-            raise RuntimeError(err_msg.format(dt, extension))
-
-    for dir_ in set(map(os.path.dirname, new_files)):
-        try:
-            os.removedirs(dir_)
-        except:
-            pass
-
-    repo.index.write()
-    repo.checkout()
-
+    repo.arrange_by_imdates(file_data)
     repo.annex.pre_commit()
 
 
