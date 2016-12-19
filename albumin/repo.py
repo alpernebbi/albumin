@@ -170,7 +170,7 @@ class AlbuminRepo(pygit2.Repository):
 
         for folder in set(map(os.path.dirname, files)):
             try:
-                os.removedirs(folder)
+                os.removedirs(self.abs_path(folder))
             except OSError:
                 pass
 
