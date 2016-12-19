@@ -84,7 +84,6 @@ def analyze(analyze_path, repo=None, timezone=None):
     if repo:
         files = {f: repo.annex.calckey(f) for f in files}
         updates, remaining = repo.imdate_diff(files, timezone=timezone)
-        report_ = report(files, updates, remaining)
 
     else:
         files = {f: f for f in files}
@@ -95,9 +94,11 @@ def analyze(analyze_path, repo=None, timezone=None):
                 imdate.timezone = timezone
 
         updates = {f: (v, None) for f, v in additions.items()}
-        report_ = report(files, updates, remaining)
-        report_ = filter_report(report_, '[F+]')
 
+    report_ = report(files, updates, remaining)
+    report_ = merge_report(report_)
+    if not repo:
+        report_ = filter_report(report_, '[F+]')
     report_ = format_report(report_)
     print(*report_, sep='\n')
 
@@ -165,6 +166,27 @@ def filter_report(report, *remove):
             continue
 
         yield line
+
+
+def merge_report(report):
+    merged = None
+
+    for line in (*report, '!EOF'):
+        prefix = line[:4]
+
+        if not merged:
+            merged = line
+            continue
+
+        if prefix == '[..]':
+            merged += line[7:] + ', '
+            continue
+
+        if merged.endswith(', '):
+            yield merged[:-2]
+        else:
+            yield merged
+        merged = line
 
 
 def format_report(report):
