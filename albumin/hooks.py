@@ -15,9 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import pygit2
 import pytz
-from datetime import datetime
 
 from albumin.repo import AlbuminRepo
 from albumin.imdate import analyze_date
@@ -28,12 +26,13 @@ def pre_commit_hook():
     new_files = repo.new_files()
 
     try:
-        timezone = get_timezone(repo)
+        timezone = repo.timezone
         print('Timezone: {}'.format(timezone))
     except pytz.exceptions.UnknownTimeZoneError as err:
         print("Invalid time zone: {}".format(err))
         return 1
-    except KeyError:
+
+    if not timezone:
         print("Please set albumin.timezone:")
         print("    $ git -c albumin.timezone=UTC commit ...")
         return 2
@@ -71,23 +70,6 @@ def post_commit_hook():
 
 def current_repo():
     return AlbuminRepo(os.getcwd(), create=False)
-
-
-def git_config_overrides():
-    try:
-        git_config_parameters = os.getenv('GIT_CONFIG_PARAMETERS')
-        git_config_lines = git_config_parameters[1:-1].split('\' \'')
-        return dict(config.split('=') for config in git_config_lines)
-    except:
-        return {}
-
-
-def get_timezone(repo=None):
-    tz = git_config_overrides().get('albumin.timezone', '')
-    if repo and not tz:
-        tz = repo.config['albumin.timezone']
-        print('Using default timezone.')
-    return pytz.timezone(tz)
 
 
 git_hooks = {

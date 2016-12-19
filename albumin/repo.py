@@ -27,6 +27,15 @@ from albumin.imdate import ImageDate
 
 
 class AlbuminRepo(pygit2.Repository):
+    @staticmethod
+    def config_overrides():
+        try:
+            params = os.getenv('GIT_CONFIG_PARAMETERS')
+            lines = params[1:-1].split("' '")
+            return dict(config.split('=') for config in lines)
+        except:
+            return {}
+
     def __init__(self, path, create=True):
         try:
             git_path = pygit2.discover_repository(path)
@@ -40,6 +49,20 @@ class AlbuminRepo(pygit2.Repository):
 
         super().__init__(git_path)
         self.annex = AlbuminAnnex(self.workdir, create=create)
+
+    @property
+    def timezone(self):
+        try:
+            tz = self.config['albumin.timezone']
+        except KeyError:
+            tz = None
+
+        try:
+            tz = self.config_overrides()['albumin.timezone']
+        except KeyError:
+            pass
+
+        return pytz.timezone(tz) if tz else tz
 
     def imdate_diff(self, files=None, timezone=None):
         if not files:
