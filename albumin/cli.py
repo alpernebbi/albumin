@@ -20,10 +20,11 @@
 Albumin. Manages photographs using a git-annex repository.
 
 Usage:
-    albumin analyze <path> [--repo=<repo>] [--timezone=<tz>]
+    albumin analyze [<path>] [--repo=<repo>] [--timezone=<tz>]
     albumin import <path> [--repo=<repo>] [--timezone=<tz>] [--tag=<tag>:<value>]...
 
 Actions:
+    analyze                 Analyze files in the repo's staging area
     analyze <path>          Analyze the files at <path>
     import <path>           Import files from <path>
 

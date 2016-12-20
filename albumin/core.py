@@ -60,6 +60,9 @@ def analyze(analyze_path, repo=None, timezone=None):
     if repo:
         files = {f: repo.annex.calckey(f) for f in files}
         repo.timezone = timezone
+
+        if not files:
+            files = repo.new_files()
         updates, remaining = repo.imdate_diff(files)
 
     else:
