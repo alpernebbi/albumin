@@ -19,6 +19,8 @@ import tarfile
 
 
 def files_in(dir_path, relative=False):
+    if (dir_path is None) or (not os.path.isdir(dir_path)):
+        return
     exclude = ['.git']
     for root, dirs, files in os.walk(dir_path, topdown=True):
         dirs[:] = [d for d in dirs if d not in exclude]
