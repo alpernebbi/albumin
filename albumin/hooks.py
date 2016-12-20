@@ -48,7 +48,7 @@ def pre_commit_hook():
             print('    {}'.format(file))
         return 3
 
-    batch = repo.arrange_by_imdates(file_data)
+    batch = repo.arrange_by_imdates(imdates=file_data)
     repo.annex.pre_commit()
 
 

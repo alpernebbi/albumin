@@ -144,7 +144,7 @@ class AlbuminRepo(pygit2.Repository):
         idx.path = dst
         self.index.add(idx)
 
-    def arrange_by_imdates(self, imdates=None, batch=None):
+    def arrange_by_imdates(self, files=None, imdates=None, batch=None):
         if not imdates:
             imdates = {}
 
@@ -167,7 +167,8 @@ class AlbuminRepo(pygit2.Repository):
                 self.index.remove(file)
                 return dest
 
-        files = self.new_files()
+        if not files:
+            files = self.new_files()
         moved_files = []
 
         self.index.read()
