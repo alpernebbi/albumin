@@ -116,7 +116,16 @@ def from_exif(*file_paths):
         'EXIF:CreateDate']
 
     with ExifTool() as tool:
-        tags_list = tool.get_tags_batch(exiftool_tags, file_paths)
+        try:
+            tags_list = tool.get_tags_batch(exiftool_tags, file_paths)
+        except:
+            tags_list = []
+            for file in file_paths:
+                try:
+                    tags = tool.get_tags(exiftool_tags, file)
+                    tags_list.append(tags)
+                except:
+                    pass
 
     data = {}
     for tags in tags_list:
