@@ -168,6 +168,7 @@ class AlbuminRepo(pygit2.Repository):
                 return dest
 
         files = self.new_files()
+        moved_files = []
 
         self.index.read()
         for file, key in files.items():
@@ -175,12 +176,15 @@ class AlbuminRepo(pygit2.Repository):
 
             for i in range(0, 100):
                 if move_file(file, key, name_fmt.format(i)):
-                    os.remove(self.abs_path(file))
+                    moved_files.append(file)
                     break
             else:
                 err_msg = 'Ran out of {} files'
                 raise RuntimeError(err_msg.format(name_fmt))
         self.index.write()
+
+        for file in moved_files:
+            os.remove(self.abs_path(file))
 
         for folder in set(map(os.path.dirname, files)):
             try:
