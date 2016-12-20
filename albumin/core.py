@@ -44,6 +44,9 @@ def import_(repo, import_path, timezone=None, tags=None):
     for key, (new_imdate, _) in updates.items():
         repo.annex[key].imdate = new_imdate
 
+    for file, key in imported_files.items():
+        repo.annex[key].update(tags)
+
     batch = repo.arrange_by_imdates()
     timestamp = datetime.strptime(batch, '%Y%m%dT%H%M%SZ')
 
