@@ -15,8 +15,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import pytz
-import pygit2
 from datetime import datetime
 from collections import OrderedDict
 
@@ -24,37 +22,21 @@ from albumin.utils import files_in
 from albumin.imdate import analyze_date
 
 
-def import_(repo, import_path, timezone=None, tags=None):
-    if not tags:
-        tags = {}
-
-    imported_files = repo.annex.import_(import_path)
-    repo.annex.clear_metadata_cache()
-
-    repo.timezone = timezone
-    updates, remaining = repo.imdate_diff(
-        {repo.abs_path(f): k for f, k in imported_files.items()}
-    )
-    if remaining:
-        raise NotImplementedError(remaining)
-    if not updates:
-        print('All files and info already in repo.')
-        return
-
-    for key, (new_imdate, _) in updates.items():
-        repo.annex[key].imdate = new_imdate
-
-    for file, key in imported_files.items():
-        repo.annex[key].update(tags)
-
-    batch = repo.arrange_by_imdates()
+def import_(repo, path, **tags):
+    batch, files, updates, remaining = repo.import_(path, **tags)
     timestamp = datetime.strptime(batch, '%Y%m%dT%H%M%SZ')
+    short_report = list(report(files, updates, remaining))
 
     title = 'Batch: {}'.format(batch)
     tags_ = '\n'.join('{}: {}'.format(t, v) for t, v in tags.items())
-    report_ = '\n'.join(report(imported_files, updates, remaining))
-    commit_msg = '\n\n'.join((title, tags_, report_))
+    commit_report = '\n'.join(short_report)
+
+    commit_msg = '\n\n'.join((title, tags_, commit_report))
     repo.commit(commit_msg, timestamp=timestamp)
+
+    long_report = format_report(merge_report(short_report))
+    print(title, tags_, sep='\n\n', end='\n\n')
+    print(*long_report, sep='\n')
 
 
 def analyze(analyze_path, repo=None, timezone=None):

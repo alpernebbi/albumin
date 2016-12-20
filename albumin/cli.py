@@ -57,6 +57,8 @@ def main():
 
     if args.get('--timezone'):
         args['--timezone'] = pytz.timezone(args['--timezone'])
+        if args.get('--repo'):
+            args['--repo'].timezone = args['--timezone']
 
     if args.get('--tag'):
         args['--tag'] = dict(t.split(':') for t in args['--tag'])
@@ -71,9 +73,8 @@ def main():
     elif args['import']:
         albumin.core.import_(
             repo=args['--repo'],
-            import_path=args['<path>'],
-            timezone=args['--timezone'],
-            tags=args['--tag']
+            path=args['<path>'],
+            **args['--tag']
         )
 
 if __name__ == "__main__":

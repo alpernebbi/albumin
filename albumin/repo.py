@@ -76,6 +76,23 @@ class AlbuminRepo(pygit2.Repository):
 
         self._session_timezone = tz
 
+    def import_(self, path, **tags):
+        files = self.annex.import_(path)
+        updates, remaining = self.imdate_diff(
+            {self.abs_path(f): k for f, k in files.items()}
+        )
+
+        if remaining:
+            raise NotImplementedError(remaining)
+
+        for key, (new_imdate, _) in updates.items():
+            self.annex[key].imdate = new_imdate
+        for file, key in files.items():
+            self.annex[key].update(tags)
+
+        batch = self.arrange_by_imdates(files=files)
+        return batch, files, updates, remaining
+
     def imdate_diff(self, files=None):
         if not files:
             files = self.new_files()
