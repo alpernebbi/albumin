@@ -36,7 +36,7 @@ class AlbuminRepo(pygit2.Repository):
         except:
             return {}
 
-    def __init__(self, path, create=True):
+    def __init__(self, path, create=False):
         try:
             git_path = pygit2.discover_repository(path)
         except KeyError:
@@ -228,7 +228,7 @@ class AlbuminRepo(pygit2.Repository):
 
 
 class AlbuminAnnex(GitAnnex):
-    def __init__(self, path, create=True):
+    def __init__(self, path, create=False):
         super().__init__(path, create=create)
 
     def __getitem__(self, map_key):
