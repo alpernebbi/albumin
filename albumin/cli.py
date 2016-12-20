@@ -16,197 +16,64 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+"""
+Albumin. Manages photographs using a git-annex repository.
+
+Usage:
+    albumin analyze <path> [--repo=<repo>] [--timezone=<tz>]
+    albumin import <path> [--repo=<repo>] [--timezone=<tz>] [--tag=<tag>:<value>]...
+
+Actions:
+    analyze <path>          Analyze the files at <path>
+    import <path>           Import files from <path>
+
+Options:
+    --repo=<repo>           Git-annex repository to use. [default: .]
+    --timezone=<tz>         Timezone to assume pictures are in.
+    --tag=<tag>:<value>     Tags to add to all imported files.
+
+"""
+
 import sys
-import argparse
 import pytz
+from docopt import docopt
 
 import albumin.core
 from albumin.repo import AlbuminRepo
-from albumin.hooks import git_hooks
 
 
-def main(*args):
-    if not args:
-        name, *args = sys.argv
-        name = os.path.basename(name)
+def main():
+    name = sys.argv[0]
+    args = docopt(__doc__, version='0.1.0')
 
-        if name in git_hooks:
-            args = ('--git-hook', name, *args)
-
-    parser = argument_parser()
-    ns = parser.parse_args(args)
-    validate_namespace(ns)
-
-    if ns.interactive:
-        interactive(ns.repo, parser)
-    else:
-        take_action(ns)
-
-
-def take_action(ns):
-    if ns.import_path:
-        albumin.core.import_(ns.repo,
-                             ns.import_path,
-                             timezone=ns.timezone,
-                             tags=ns.tags)
-    elif ns.analyze_path:
-        albumin.core.analyze(ns.analyze_path,
-                             repo=ns.repo,
-                             timezone=ns.timezone)
-    elif ns.git_hook:
-        hook, *hook_args = ns.git_hook
-
-        if hook not in git_hooks:
-            raise ValueError('Invalid hook: {}'.format(hook))
-
-        status = git_hooks[hook](*hook_args)
-        if status:
-            print("Aborting commit.")
-            sys.exit(status)
-
-
-def interactive(repo, parser):
-    while True:
-        print('alb >>', end=' ')
+    if args.get('--repo'):
         try:
-            user_cmd = input()
-        except EOFError:
-            return
-        if user_cmd == 'exit':
-            return
-        ns = parser.parse_args(user_cmd.split())
-        ns.repo = repo
-        validate_namespace(ns)
-        take_action(ns)
+            args['--repo'] = AlbuminRepo(args['--repo'])
+        except ValueError:
+            if args.get('import'):
+                raise
+            args['--repo'] = None
 
+    if args.get('--timezone'):
+        args['--timezone'] = pytz.timezone(args['--timezone'])
 
-def argument_parser():
-    parser = argparse.ArgumentParser(
-        description="Manage photographs using a git-annex repository.",
-        usage='%(prog)s [repo-path] [action [option ...]]',
-        add_help=False)
+    if args.get('--tag'):
+        args['--tag'] = dict(t.split(':') for t in args['--tag'])
 
-    positional = parser.add_argument_group('Positional arguments')
+    if args['analyze']:
+        albumin.core.analyze(
+            analyze_path=args['<path>'],
+            repo=args['--repo'],
+            timezone=args['--timezone']
+        )
 
-    positional.add_argument(
-        'repo',
-        metavar='repo_path',
-        nargs='?',
-        help="path of the git-annex repository")
-
-    actions = parser.add_argument_group('Actions')
-
-    actions.add_argument(
-        '--help', '-h',
-        action='help',
-        help='show this help message and exit')
-
-    actions.add_argument(
-        '--import',
-        dest="import_path",
-        metavar="path",
-        help="import pictures from the given path")
-
-    actions.add_argument(
-        '--analyze',
-        dest="analyze_path",
-        action='store',
-        metavar="path",
-        help="analyze pictures in the given path")
-
-    actions.add_argument(
-        '--interactive',
-        dest='interactive',
-        action='store_true',
-        help="use albumin as an interactive tool")
-
-    actions.add_argument(
-        '--git-hook',
-        dest='git_hook',
-        action='store',
-        metavar=('h', 'x'),
-        nargs='+',
-        help="use albumin as a git hook"
-    )
-
-    options = parser.add_argument_group('Options')
-
-    options.add_argument(
-        '--timezone',
-        dest='timezone',
-        action='store',
-        metavar='tz',
-        help="assume pictures have dates in given timezone")
-
-    options.add_argument(
-        '--tags',
-        dest='tags',
-        action='store',
-        metavar='x=y',
-        nargs='+',
-        help="add aditional tags to all imported files")
-
-    return parser
-
-
-def validate_namespace(ns):
-    if ns.git_hook:
-        if ns.repo:
-            raise ValueError(
-                'Can\'t manually specify repo for --git-hook')
-        if ns.import_path or ns.analyze_path or ns.interactive:
-            raise ValueError(
-                '--git-hook can\'t be used with other actions')
-        if ns.timezone or ns.tags:
-            raise ValueError(
-                '--git-hook can\'t be used with other options')
-
-    if ns.repo and not isinstance(ns.repo, AlbuminRepo):
-        ns.repo = AlbuminRepo(ns.repo)
-
-    if ns.import_path:
-        if not ns.repo:
-            raise ValueError(
-                'Repository required for --import.')
-        if ns.analyze_path or ns.interactive:
-            raise ValueError(
-                'Multiple actions are forbidden.')
-
-    if ns.analyze_path:
-        if ns.import_path or ns.interactive:
-            raise ValueError(
-                'Multiple actions are forbidden.')
-
-    if ns.interactive:
-        if not ns.repo:
-            raise ValueError(
-                '--interactive requires a repository')
-        if ns.import_path or ns.analyze_path:
-            raise ValueError(
-                'Multiple actions are forbidden.')
-
-    if ns.timezone:
-        if not (ns.import_path or ns.analyze_path):
-            raise ValueError(
-                '--timezone requires either --import or --analyze')
-        if ns.timezone not in pytz.all_timezones:
-            raise ValueError(
-                'Invalid timezone {}'.format(ns.timezone))
-        ns.timezone = pytz.timezone(ns.timezone)
-
-    if ns.tags:
-        ns.tags = {x[0]: x[1] for x in (t.split('=') for t in ns.tags)}
-        if not ns.import_path:
-            raise ValueError(
-                '--tags requires --import')
-        forbidden_tags = ['datetime', 'datetime-method',
-                          'year', 'month', 'day']
-        for tag in ns.tags:
-            if tag in forbidden_tags or 'lastchanged' in tag:
-                raise ValueError(
-                    'The following tag is forbidden: {}'.format(tag))
-
+    elif args['import']:
+        albumin.core.import_(
+            repo=args['--repo'],
+            import_path=args['<path>'],
+            timezone=args['--timezone'],
+            tags=args['--tag']
+        )
 
 if __name__ == "__main__":
     main()

@@ -48,5 +48,5 @@ setuptools.setup(
     },
     keywords=['git', 'annex', 'metadata', 'photo', 'photograph', 'library'],
     py_modules=['albumin'],
-    install_requires=['git-annex-adapter', 'pytz', 'pygit2', 'PyExifTool'],
+    install_requires=['git-annex-adapter', 'pytz', 'pygit2', 'PyExifTool', 'docopt'],
 )
