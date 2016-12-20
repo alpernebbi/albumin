@@ -123,11 +123,15 @@ class AlbuminRepo(pygit2.Repository):
 
     def new_files(self, keys=True):
         self.index.read()
-        diff = self.diff('HEAD', cached=True)
-        files = (
-            d.delta.new_file.path for d in diff
-            if d.delta.status == pygit2.GIT_STATUS_INDEX_NEW
-        )
+        try:
+            diff = self.diff('HEAD', cached=True)
+        except:
+            files = (i.path for i in self.index)
+        else:
+            files = (
+                d.delta.new_file.path for d in diff
+                if d.delta.status == pygit2.GIT_STATUS_INDEX_NEW
+            )
 
         if keys:
             return {file: self.annex.lookupkey(file) for file in files}
@@ -199,10 +203,16 @@ class AlbuminRepo(pygit2.Repository):
             int(timestamp.timestamp())
         )
 
+        try:
+            self.head
+        except pygit2.GitError:
+            parents = []
+        else:
+            parents = [self.head.get_object().hex]
+
         commit = self.create_commit(
             'HEAD', author, author, message,
-            self.index.write_tree(),
-            [self.head.get_object().hex]
+            self.index.write_tree(), parents
         )
 
         return commit
