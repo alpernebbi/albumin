@@ -24,6 +24,7 @@ from git_annex_adapter import GitAnnex
 from git_annex_adapter import GitAnnexMetadata
 from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
+from albumin.utils import files_in
 
 
 class AlbuminRepo(pygit2.Repository):
@@ -92,6 +93,15 @@ class AlbuminRepo(pygit2.Repository):
 
         batch = self.arrange_by_imdates(files=files)
         return batch, files, updates, remaining
+
+    def analyze(self, path=None):
+        files = {f: self.annex.calckey(f) for f in files_in(path)}
+        if not files:
+            files = self.new_files()
+            files = {self.abs_path(f): k for f, k in files.items()}
+
+        updates, remaining = self.imdate_diff(files)
+        return files, updates, remaining
 
     def imdate_diff(self, files=None):
         if not files:

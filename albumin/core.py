@@ -39,33 +39,25 @@ def import_(repo, path, **tags):
     print(*long_report, sep='\n')
 
 
-def analyze(analyze_path, repo=None, timezone=None):
-    files = list(files_in(analyze_path))
+def repo_analyze(repo, path=None):
+    files, updates, remaining = repo.analyze(path=path)
+    short_report = report(files, updates, remaining)
+    long_report = format_report(merge_report(short_report))
+    print(*long_report, sep='\n')
 
-    if repo:
-        files = {f: repo.annex.calckey(f) for f in files}
-        repo.timezone = timezone
 
-        if not files:
-            files = repo.new_files()
-        updates, remaining = repo.imdate_diff(files)
+def imdate_analyze(path, timezone=None):
+    files = {f: f for f in files_in(path)}
+    additions, remaining = analyze_date(*files)
 
-    else:
-        files = {f: f for f in files}
-        additions, remaining = analyze_date(*files)
+    if timezone:
+        for imdate in additions.values():
+            imdate.timezone = timezone
+    updates = {f: (v, None) for f, v in additions.items()}
 
-        if timezone:
-            for imdate in additions.values():
-                imdate.timezone = timezone
-
-        updates = {f: (v, None) for f, v in additions.items()}
-
-    report_ = report(files, updates, remaining)
-    report_ = merge_report(report_)
-    if not repo:
-        report_ = filter_report(report_, '[F+]')
-    report_ = format_report(report_)
-    print(*report_, sep='\n')
+    short_report = merge_report(report(files, updates, remaining))
+    long_report = format_report(filter_report(short_report, '[F+]'))
+    print(*long_report, sep='\n')
 
 
 def report(files, updates, remaining):

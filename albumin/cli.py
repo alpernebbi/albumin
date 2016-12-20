@@ -63,14 +63,19 @@ def main():
     if args.get('--tag'):
         args['--tag'] = dict(t.split(':') for t in args['--tag'])
 
-    if args['analyze']:
-        albumin.core.analyze(
-            analyze_path=args['<path>'],
+    if args.get('analyze') and args.get('--repo'):
+        albumin.core.repo_analyze(
             repo=args['--repo'],
+            path=args['<path>'],
+        )
+
+    elif args.get('analyze'):
+        albumin.core.imdate_analyze(
+            path=args['<path>'],
             timezone=args['--timezone']
         )
 
-    elif args['import']:
+    elif args.get('import'):
         albumin.core.import_(
             repo=args['--repo'],
             path=args['<path>'],
