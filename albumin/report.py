@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import itertools
 from collections import OrderedDict
 
 
@@ -66,6 +67,59 @@ class Report(object):
                 self.additions[file] = (key, new)
             elif file not in remaining:
                 self.redundants[file] = key
+
+    @classmethod
+    def parse(cls, report_str):
+        from albumin.imdate import ImageDate
+        def prefix(line):
+            return line[:4]
+
+        lines = report_str.splitlines()
+        breaks = map(cls.sections.__contains__, map(prefix, lines))
+        group_nums = list(itertools.accumulate(map(int, breaks)))
+        groups = OrderedDict((i, []) for i in group_nums)
+
+        for line, num in zip(lines, group_nums):
+            groups[num].append(line)
+
+        files, updates, remaining = {}, {}, {}
+
+        for group in groups.values():
+            info = {}
+            for num, line in enumerate(group):
+                info[prefix(line)] = line[5:] if num == 0 else line[8:]
+
+            new, old = info.get('[ T]'), info.get('[ t]')
+            new = ImageDate.parse(new) if new else new
+            old = ImageDate.parse(old) if old else old
+
+            key = info.get('[K?]') or info.get('[K!]') \
+                  or info.get('[K+]') or info.get('[K=]')
+
+            file = info.get('[F?]') or info.get('[F!]') \
+                   or info.get('[F+]') or info.get('[F=]')
+
+            if key:
+                file = info.get('[ F]')
+            elif file:
+                key = file
+
+            if '[K?]' in info or '[F?]' in info:
+                files[file], remaining[file] = key, key
+
+            elif '[K!]' in info or '[F!]' in info \
+                    or '[K+]' in info or '[F+]' in info:
+                files[file], updates[key] = key, (new, old)
+
+            elif '[K=]' in info or '[F=]' in info:
+                files[file] = key
+
+        report = Report(files, updates, remaining)
+
+        if all(file == key for file, key in files.items()):
+            report.has_keys = False
+
+        return report
 
     @property
     def updates(self):
