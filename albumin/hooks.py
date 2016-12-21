@@ -192,7 +192,11 @@ def parse_commit_msg(msg=None):
         msg_head.pop()
 
     def section(header):
-        idx = msg.index(header) + 1
+        try:
+            idx = msg.index(header) + 1
+        except ValueError:
+            return []
+
         try:
             len_ = msg[idx:].index('')
         except ValueError:
