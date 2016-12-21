@@ -62,6 +62,14 @@ class ImageDate:
             else:
                 raise ValueError(datetime_)
 
+    @classmethod
+    def parse(cls, imdate_str):
+        datetime_, info = imdate_str.split(' @ ')
+        timezone, method = info.strip('()').split(') (')
+        datetime_ = datetime.strptime(datetime_, '%Y-%m-%d %H:%M:%S')
+        datetime_ = pytz.timezone(timezone).localize(datetime_)
+        return cls(method, datetime_)
+
     @property
     def timezone(self):
         try:
