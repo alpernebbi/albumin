@@ -77,7 +77,26 @@ def prepare_commit_msg_hook(args):
     Albumin as a pre-commit git hook.
     Usage: prepare-commit-msg <editmsg> [[<commit_type>] <commit_sha>]
     """
-    pass
+    repo = current_repo()
+    msg_path = os.path.join(repo.path, 'albumin.msg')
+
+    with open(msg_path, 'r') as msg_file:
+        batch = msg_file.readline().strip().strip('[]')
+        report = [line.strip() for line in msg_file]
+
+    def new_message():
+        yield 'Batch: {}'.format(batch)
+        yield ''
+        yield '# Tags to be applied'
+        yield '[tags]'
+        yield 'batch: {}'.format(batch)
+        yield ''
+        yield '# Albumin report'
+        yield '[report]'
+        yield from report
+
+    with open(args['<editmsg>'], 'r+') as editmsg:
+        print(*new_message(), sep='\n', file=editmsg)
 
 
 def commit_msg_hook(args):
