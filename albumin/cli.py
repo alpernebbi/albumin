@@ -52,7 +52,10 @@ def main():
     if name in git_hooks:
         hook = git_hooks[name]
         args = docopt(hook.__doc__, version=version)
-        sys.exit(hook(args))
+        retval = hook(args)
+        if retval:
+            print('Aborting commit.')
+        sys.exit(retval)
 
     args = docopt(__doc__, version=version)
 

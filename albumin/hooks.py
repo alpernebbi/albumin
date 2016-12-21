@@ -31,7 +31,6 @@ def pre_commit_hook(args):
 
     try:
         timezone = repo.timezone
-        print('Timezone: {}'.format(timezone))
     except pytz.exceptions.UnknownTimeZoneError as err:
         print("Invalid time zone: {}".format(err))
         return 1
@@ -46,6 +45,7 @@ def pre_commit_hook(args):
     )
 
     if report.remaining:
+        print('Some files in report have no information:')
         print(report)
         return 3
 
@@ -116,6 +116,8 @@ def commit_msg_hook(args):
     head, tags, report = parse_commit_msg(msg)
 
     if report.remaining:
+        print('Report shouldn\'t have no-info elements, but does:')
+        print(*report.remaining, sep='\n')
         return 1
 
     new_files = {
@@ -132,6 +134,8 @@ def commit_msg_hook(args):
         elif name in report.overwrites:
             _, imdate, _ = report.overwrites[file][1]
         else:
+            print('Check file in report:')
+            print(file, key, sep='\n')
             return 2
 
         utc = imdate.datetime.astimezone(pytz.utc)
@@ -143,13 +147,17 @@ def commit_msg_hook(args):
             if new_files.get(new_name) == key:
                 break
         else:
+            print('Can\'t find {} with key:'.format(dt_name))
+            print('    {}'.format(key))
             return 3
 
     for tag, value in tags.items():
         if tag in repo.annex.internal_tags:
+            print('Invalid tag: {}'.format(tag))
             return 4
 
         if tag.endswith('lastchanged'):
+            print('Tags can\'t end with lastchanged: {}'.format(tag))
             return 5
 
 
