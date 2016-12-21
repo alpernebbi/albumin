@@ -67,14 +67,6 @@ def pre_commit_hook(args):
         print(*report.short(), sep='\n', file=msg_file)
 
 
-def pre_commit_annex_hook(args):
-    """
-    Albumin as a pre-commit-annex git hook.
-    Usage: pre-commit-annex <file>...
-    """
-    pass
-
-
 def prepare_commit_msg_hook(args):
     """
     Albumin as a pre-commit git hook.
@@ -212,7 +204,6 @@ def current_repo():
 
 git_hooks = {
     'pre-commit': pre_commit_hook,
-    'pre-commit-annex': pre_commit_annex_hook,
     'prepare-commit-msg': prepare_commit_msg_hook,
     'commit-msg': commit_msg_hook,
     'post-commit': post_commit_hook,
