@@ -87,21 +87,22 @@ class Report(object):
     def short(self):
         if self.has_keys:
             for file, key in self.remaining.items():
-                yield '[K?] {}:'.format(key)
+                yield '[K?] {}'.format(key)
                 yield '[ F] :: {}'.format(file)
 
             for file, (key, new, old) in self.overwrites.items():
-                yield '[K!] {}:'.format(key)
+                yield '[K!] {}'.format(key)
                 yield '[ F] :: {}'.format(file)
-                yield '[ T] :: {} <- {}'.format(new, old)
+                yield '[ T] :: {}'.format(new)
+                yield '[ t] :: {}'.format(old)
 
             for file, (key, new) in self.additions.items():
-                yield '[K+] {}:'.format(key)
+                yield '[K+] {}'.format(key)
                 yield '[ F] :: {}'.format(file)
                 yield '[ T] :: {}'.format(new)
 
             for file, key in self.redundants.items():
-                yield '[K=] {}:'.format(key)
+                yield '[K=] {}'.format(key)
                 yield '[ F] :: {}'.format(file)
 
         else:
@@ -109,11 +110,12 @@ class Report(object):
                 yield '[F?] {}'.format(file)
 
             for file, (_, new, old) in self.overwrites.items():
-                yield '[F!] {}:'.format(file)
-                yield '[ T] :: {} <- {}'.format(new, old)
+                yield '[F!] {}'.format(file)
+                yield '[ T] :: {}'.format(new)
+                yield '[ t] :: {}'.format(old)
 
             for file, (_, new) in self.additions.items():
-                yield '[F+] {}:'.format(file)
+                yield '[F+] {}'.format(file)
                 yield '[ T] :: {}'.format(new)
 
             for file, _ in self.redundants.items():
