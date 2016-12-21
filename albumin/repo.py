@@ -24,6 +24,7 @@ from git_annex_adapter import GitAnnex
 from git_annex_adapter import GitAnnexMetadata
 from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
+from albumin.report import Report
 from albumin.utils import files_in
 
 
@@ -79,29 +80,26 @@ class AlbuminRepo(pygit2.Repository):
 
     def import_(self, path, **tags):
         files = self.annex.import_(path)
-        updates, remaining = self.imdate_diff(
+        report = self.imdate_diff(
             {self.abs_path(f): k for f, k in files.items()}
         )
 
-        if remaining:
-            raise NotImplementedError(remaining)
+        if report.remaining:
+            raise NotImplementedError(report.remaining)
 
-        for key, (new_imdate, _) in updates.items():
+        for _, (key, new_imdate) in report.additions.items():
             self.annex[key].imdate = new_imdate
-        for file, key in files.items():
+        for _, (key, new_imdate, _) in report.overwrites.items():
+            self.annex[key].imdate = new_imdate
+        for _, key in report.files.items():
             self.annex[key].update(tags)
 
         batch = self.arrange_by_imdates(files=files)
-        return batch, files, updates, remaining
+        return batch, report
 
     def analyze(self, path=None):
         files = {f: self.annex.calckey(f) for f in files_in(path)}
-        if not files:
-            files = self.new_files()
-            files = {self.abs_path(f): k for f, k in files.items()}
-
-        updates, remaining = self.imdate_diff(files)
-        return files, updates, remaining
+        return self.imdate_diff(files)
 
     def imdate_diff(self, files=None):
         if not files:
@@ -109,19 +107,19 @@ class AlbuminRepo(pygit2.Repository):
             files = {self.abs_path(f): k for f, k in files.items()}
 
         timezone = self.timezone
-        file_data, remaining = analyze_date(*files, timezone=timezone)
+        report = analyze_date(*files, timezone=timezone)
 
-        for file in remaining.copy():
+        for file in report.remaining:
             key = files[file]
             meta = self.annex.get(key, None)
             if meta and meta.imdate:
-                remaining.remove(file)
+                report.redundants[file] = key
 
         def conflicts(a, b):
             return a.method == b.method and a.datetime != b.datetime
 
         key_data = {}
-        for file, imdate in file_data.items():
+        for file, (_, imdate) in report.additions.items():
             key = files[file]
             imdate_ = key_data.get(key, imdate)
             if conflicts(imdate, imdate_):
@@ -142,7 +140,7 @@ class AlbuminRepo(pygit2.Repository):
                     or (new.timezone != old.timezone):
                 updates[key] = (max(new, old), old)
 
-        return updates, remaining
+        return Report(files, updates, report.remaining)
 
     def new_files(self, keys=True):
         self.index.read()

@@ -18,13 +18,11 @@ from datetime import datetime
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
-from albumin.report import Report
 
 
 def import_(repo, path, **tags):
-    batch, files, updates, remaining = repo.import_(path, **tags)
+    batch, report = repo.import_(path, **tags)
     timestamp = datetime.strptime(batch, '%Y%m%dT%H%M%SZ')
-    report = Report(files, updates, remaining)
 
     title = 'Batch: {}'.format(batch)
     tags_ = '\n'.join('{}: {}'.format(t, v) for t, v in tags.items())
@@ -36,13 +34,10 @@ def import_(repo, path, **tags):
 
 
 def repo_analyze(repo, path=None):
-    files, updates, remaining = repo.analyze(path=path)
-    report = Report(files, updates, remaining)
+    report = repo.analyze(path=path)
     print(report)
 
 
 def imdate_analyze(path, timezone=None):
-    files = list(files_in(path))
-    additions, remaining = analyze_date(*files, timezone=timezone)
-    report = Report(files, additions, remaining)
-    print(report, sep='\n')
+    report = analyze_date(*files_in(path), timezone=timezone)
+    print(report)

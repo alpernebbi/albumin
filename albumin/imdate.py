@@ -18,6 +18,8 @@ import pytz
 from exiftool import ExifTool
 from datetime import datetime
 
+from albumin.report import Report
+
 
 def analyze_date(*file_paths, timezone=None):
     results = from_exif(*file_paths)
@@ -27,7 +29,7 @@ def analyze_date(*file_paths, timezone=None):
         for imdate in results.values():
             imdate.timezone = timezone
 
-    return results, remaining
+    return Report(file_paths, results, remaining)
 
 
 class ImageDate:
