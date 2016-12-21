@@ -127,11 +127,11 @@ def commit_msg_hook(args):
     for file, key in report.files.items():
         name = os.path.basename(file)
 
-        if name in report.redundants:
+        if file in report.redundants:
             imdate = repo.annex[key].imdate
-        elif name in report.additions:
+        elif file in report.additions:
             _, imdate = report.additions[file]
-        elif name in report.overwrites:
+        elif file in report.overwrites:
             _, imdate, _ = report.overwrites[file][1]
         else:
             print('Check file in report:')
