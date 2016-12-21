@@ -166,7 +166,15 @@ def post_commit_hook(args):
     Albumin as a post-commit git hook.
     Usage: post-commit
     """
-    pass
+    repo = current_repo()
+    msg_head, tags, report = parse_commit_msg()
+
+    for _, (key, new_imdate) in report.additions.items():
+        repo.annex[key].imdate = new_imdate
+    for _, (key, new_imdate, _) in report.overwrites.items():
+        repo.annex[key].imdate = new_imdate
+    for _, key in report.files.items():
+        repo.annex[key].update(tags)
 
 
 def parse_commit_msg(msg=None):
