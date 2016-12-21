@@ -35,17 +35,26 @@ Options:
 
 """
 
+import os
 import sys
 import pytz
 from docopt import docopt
 
 import albumin.core
 from albumin.repo import AlbuminRepo
+from albumin.hooks import git_hooks
 
 
 def main():
-    name = sys.argv[0]
-    args = docopt(__doc__, version='0.1.0')
+    name = os.path.basename(sys.argv[0])
+    version = '0.1.0'
+
+    if name in git_hooks:
+        hook = git_hooks[name]
+        args = docopt(hook.__doc__, version=version)
+        sys.exit(hook(args))
+
+    args = docopt(__doc__, version=version)
 
     if args.get('--repo'):
         try:

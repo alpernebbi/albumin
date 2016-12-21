@@ -21,7 +21,11 @@ from albumin.repo import AlbuminRepo
 from albumin.imdate import analyze_date
 
 
-def pre_commit_hook():
+def pre_commit_hook(args):
+    """
+    Albumin as a pre-commit hook.
+    Usage: pre-commit
+    """
     repo = current_repo()
     new_files = repo.new_files()
 
@@ -51,19 +55,35 @@ def pre_commit_hook():
     repo.annex.pre_commit()
 
 
-def pre_commit_annex_hook():
+def pre_commit_annex_hook(args):
+    """
+    Albumin as a pre-commit-annex git hook.
+    Usage: pre-commit-annex <file>...
+    """
     pass
 
 
-def prepare_commit_msg_hook(editmsg, commit_type=None, commit_sha=None):
+def prepare_commit_msg_hook(args):
+    """
+    Albumin as a pre-commit git hook.
+    Usage: prepare-commit-msg <editmsg> [[<commit_type>] <commit_sha>]
+    """
     pass
 
 
-def commit_msg_hook(editmsg):
+def commit_msg_hook(args):
+    """
+    Albumin as a pre-commit git hook.
+    Usage: commit-msg <editmsg>
+    """
     pass
 
 
-def post_commit_hook():
+def post_commit_hook(args):
+    """
+    Albumin as a post-commit git hook.
+    Usage: post-commit
+    """
     pass
 
 
