@@ -84,8 +84,16 @@ def prepare_commit_msg_hook(args):
         batch = msg_file.readline().strip().strip('[]')
         report = [line.strip() for line in msg_file]
 
+    if args['<commit_type>'] == 'message':
+        with open(args['<editmsg>'], 'r') as editmsg:
+            message = [line.strip() for line in editmsg]
+            title = "\n".join(message)
+
+    elif not args['<commit_type>']:
+        title = 'Batch: {}'.format(batch)
+
     def new_message():
-        yield 'Batch: {}'.format(batch)
+        yield title
         yield ''
         yield '# Tags to be applied'
         yield '[tags]'
