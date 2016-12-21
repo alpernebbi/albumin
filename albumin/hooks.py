@@ -50,7 +50,11 @@ def pre_commit_hook(args):
         print(report)
         return 3
 
-    file_data = {f: new for f, (new, _) in report.updates.items()}
+    file_data = {
+        new_files[repo.rel_path(f)]: new
+        for f, (new, _) in report.updates.items()
+    }
+
     batch = repo.arrange_by_imdates(imdates=file_data)
     repo.annex.pre_commit()
 
