@@ -18,7 +18,6 @@ import os
 import pytz
 
 from albumin.repo import AlbuminRepo
-from albumin.imdate import analyze_date
 from albumin.report import Report
 
 
@@ -42,18 +41,21 @@ def pre_commit_hook(args):
         print("    $ git -c albumin.timezone=UTC commit ...")
         return 2
 
-    report = analyze_date(
-        *map(repo.abs_path, new_files),
-        timezone=timezone
+    report = repo.imdate_diff(
+        {repo.abs_path(f): k for f, k in new_files.items()}
     )
 
     if report.remaining:
         print(report)
         return 3
 
+    report = Report(new_files, report.updates, set())
+
+    updates = report.updates
     file_data = {
-        new_files[repo.rel_path(f)]: new
-        for f, (new, _) in report.updates.items()
+        key: updates[key][0]
+        for file, key in new_files.items()
+        if key in updates
     }
 
     batch = repo.arrange_by_imdates(imdates=file_data)
