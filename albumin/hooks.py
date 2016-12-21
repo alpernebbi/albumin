@@ -58,6 +58,11 @@ def pre_commit_hook(args):
     batch = repo.arrange_by_imdates(imdates=file_data)
     repo.annex.pre_commit()
 
+    msg_path = os.path.join(repo.path, 'albumin.msg')
+    with open(msg_path, 'w') as msg_file:
+        print('[{}]'.format(batch), file=msg_file)
+        print(*report.short(), sep='\n', file=msg_file)
+
 
 def pre_commit_annex_hook(args):
     """
