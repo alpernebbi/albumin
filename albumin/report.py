@@ -41,7 +41,6 @@ class Report(object):
         self.overwrites = OrderedDict()
         self.additions = OrderedDict()
         self.redundants = OrderedDict()
-        self.remaining = OrderedDict()
 
         try:
             files.items()
@@ -67,8 +66,6 @@ class Report(object):
                 self.additions[file] = (key, new)
             elif file not in remaining:
                 self.redundants[file] = key
-            else:
-                self.remaining[file] = key
 
     @property
     def updates(self):
@@ -78,6 +75,14 @@ class Report(object):
         for file, (key, new) in self.additions.items():
             value[key] = (new, None)
         return value
+
+    @property
+    def remaining(self):
+        valid = {*self.additions, *self.overwrites, *self.redundants}
+        return OrderedDict(
+            (file, key) for (file, key) in self.files.items()
+            if file not in valid
+        )
 
     def short(self):
         if self.has_keys:
