@@ -19,6 +19,7 @@ import pytz
 
 from albumin.repo import AlbuminRepo
 from albumin.imdate import analyze_date
+from albumin.report import Report
 
 
 def pre_commit_hook(args):
@@ -121,6 +122,35 @@ def post_commit_hook(args):
     Usage: post-commit
     """
     pass
+
+
+def parse_commit_msg(msg=None):
+    if not msg:
+        repo = current_repo()
+        msg = repo.head.get_object().message.splitlines()
+
+    msg_head = []
+    for line in msg:
+        if line.startswith('['):
+            break
+        msg_head.append(line)
+
+    if not msg_head[-1]:
+        msg_head.pop()
+
+    def section(header):
+        idx = msg.index(header) + 1
+        try:
+            len_ = msg[idx:].index('')
+        except ValueError:
+            return msg[idx:]
+        else:
+            return msg[idx:idx+len_]
+
+    tags = dict(x.split(': ') for x in section('[tags]'))
+    report = Report.parse(section('[report]'))
+
+    return msg_head, tags, report
 
 
 def current_repo():
