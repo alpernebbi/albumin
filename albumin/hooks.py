@@ -115,7 +115,50 @@ def commit_msg_hook(args):
     Albumin as a pre-commit git hook.
     Usage: commit-msg <editmsg>
     """
-    pass
+    repo = current_repo()
+
+    with open(args['<editmsg>'], 'r') as editmsg:
+        msg = (line.strip() for line in editmsg)
+        msg = [line for line in msg if not line.startswith('#')]
+
+    head, tags, report = parse_commit_msg(msg)
+
+    if report.remaining:
+        return 1
+
+    new_files = {
+        os.path.basename(f): k for f, k in repo.new_files().items()
+    }
+
+    for file, key in report.files.items():
+        name = os.path.basename(file)
+
+        if name in report.redundants:
+            imdate = repo.annex[key].imdate
+        elif name in report.additions:
+            _, imdate = report.additions[file]
+        elif name in report.overwrites:
+            _, imdate, _ = report.overwrites[file][1]
+        else:
+            return 2
+
+        utc = imdate.datetime.astimezone(pytz.utc)
+        ext = os.path.splitext(key)[1]
+        dt_name = '{:%Y%m%dT%H%M%SZ}{{:02}}{}'.format(utc, ext)
+
+        for i in range(100):
+            new_name = dt_name.format(i)
+            if new_files.get(new_name) == key:
+                break
+        else:
+            return 3
+
+    for tag, value in tags.items():
+        if tag in repo.annex.internal_tags:
+            return 4
+
+        if tag.endswith('lastchanged'):
+            return 5
 
 
 def post_commit_hook(args):
