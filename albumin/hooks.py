@@ -19,6 +19,7 @@ import pytz
 
 from albumin.repo import AlbuminRepo
 from albumin.imdate import analyze_date
+from albumin.report import Report
 
 
 def pre_commit_hook():
@@ -38,14 +39,13 @@ def pre_commit_hook():
         return 2
 
     file_data, remaining = analyze_date(*map(repo.abs_path, new_files))
-
     for imdate in file_data.values():
         imdate.timezone = timezone
 
+    report = Report(new_files, file_data, remaining)
+
     if remaining:
-        print("No information about: ")
-        for file in sorted(remaining):
-            print('    {}'.format(file))
+        print(report)
         return 3
 
     batch = repo.arrange_by_imdates(imdates=file_data)
