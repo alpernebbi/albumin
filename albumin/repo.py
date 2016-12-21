@@ -109,17 +109,13 @@ class AlbuminRepo(pygit2.Repository):
             files = {self.abs_path(f): k for f, k in files.items()}
 
         timezone = self.timezone
-        file_data, remaining = analyze_date(*files)
+        file_data, remaining = analyze_date(*files, timezone=timezone)
 
         for file in remaining.copy():
             key = files[file]
             meta = self.annex.get(key, None)
             if meta and meta.imdate:
                 remaining.remove(file)
-
-        if timezone:
-            for imdate in file_data.values():
-                imdate.timezone = timezone
 
         def conflicts(a, b):
             return a.method == b.method and a.datetime != b.datetime

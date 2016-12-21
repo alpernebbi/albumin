@@ -43,11 +43,6 @@ def repo_analyze(repo, path=None):
 
 def imdate_analyze(path, timezone=None):
     files = list(files_in(path))
-    additions, remaining = analyze_date(*files)
-
-    if timezone:
-        for imdate in additions.values():
-            imdate.timezone = timezone
-
+    additions, remaining = analyze_date(*files, timezone=timezone)
     report = Report(files, additions, remaining)
     print(report, sep='\n')

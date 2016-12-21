@@ -38,10 +38,10 @@ def pre_commit_hook():
         print("    $ git -c albumin.timezone=UTC commit ...")
         return 2
 
-    file_data, remaining = analyze_date(*map(repo.abs_path, new_files))
-    for imdate in file_data.values():
-        imdate.timezone = timezone
-
+    file_data, remaining = analyze_date(
+        *map(repo.abs_path, new_files),
+        timezone=timezone
+    )
     report = Report(new_files, file_data, remaining)
 
     if remaining:
