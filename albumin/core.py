@@ -24,13 +24,19 @@ def import_(repo, path, **tags):
     batch, report = repo.import_(path, **tags)
     timestamp = datetime.strptime(batch, '%Y%m%dT%H%M%SZ')
 
-    title = 'Batch: {}'.format(batch)
-    tags_ = '\n'.join('{}: {}'.format(t, v) for t, v in tags.items())
-    commit_report = '\n'.join(report.short())
-    commit_msg = '\n\n'.join((title, tags_, commit_report))
-    repo.commit(commit_msg, timestamp=timestamp)
+    def commit_msg():
+        yield 'Batch: {}'.format(batch)
+        yield ''
+        yield '[tags]'
+        yield 'batch: {}'.format(batch)
+        yield from ('{}: {}'.format(t, v) for t, v in tags.items())
+        yield ''
+        yield '[report]'
+        yield from report.short()
 
-    print(title, tags_, report, sep='\n\n')
+    commit_msg = '\n'.join(commit_msg())
+    repo.commit(commit_msg, timestamp=timestamp)
+    print(commit_msg)
 
 
 def repo_analyze(repo, path=None):
