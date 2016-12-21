@@ -98,7 +98,7 @@ def prepare_commit_msg_hook(args):
         yield '[report]'
         yield from report
 
-    with open(args['<editmsg>'], 'r+') as editmsg:
+    with open(args['<editmsg>'], 'w') as editmsg:
         print(*new_message(), sep='\n', file=editmsg)
 
 
