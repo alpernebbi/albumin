@@ -70,6 +70,15 @@ class Report(object):
             else:
                 self.remaining[file] = key
 
+    @property
+    def updates(self):
+        value = {}
+        for file, (key, new, old) in self.overwrites.items():
+            value[key] = (new, old)
+        for file, (key, new) in self.additions.items():
+            value[key] = (new, None)
+        return value
+
     def short(self):
         if self.has_keys:
             for file, key in self.remaining.items():
