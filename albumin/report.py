@@ -69,12 +69,12 @@ class Report(object):
                 self.redundants[file] = key
 
     @classmethod
-    def parse(cls, report_str):
+    def parse(cls, report_lines):
         from albumin.imdate import ImageDate
         def prefix(line):
             return line[:4]
 
-        lines = report_str.splitlines()
+        lines = list(report_lines)
         breaks = map(cls.sections.__contains__, map(prefix, lines))
         group_nums = list(itertools.accumulate(map(int, breaks)))
         groups = OrderedDict((i, []) for i in group_nums)
