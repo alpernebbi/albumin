@@ -71,6 +71,11 @@ def main():
 
     if args.get('--tag'):
         args['--tag'] = dict(t.split(':') for t in args['--tag'])
+        for tag, value in args['--tag'].items():
+            if tag in args['--repo'].annex.internal_tags:
+                raise ValueError(tag)
+            if tag.endswith('lastchanged'):
+                raise ValueError(tag)
 
     if args.get('analyze') and args.get('--repo'):
         albumin.core.repo_analyze(

@@ -254,6 +254,11 @@ class AlbuminRepo(pygit2.Repository):
 
 
 class AlbuminAnnex(GitAnnex):
+    internal_tags = [
+        'timezone', 'datetime', 'datetime-method',
+        'year', 'month', 'day'
+    ]
+
     def __init__(self, path, create=False):
         super().__init__(path, create=create)
 
