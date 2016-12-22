@@ -86,6 +86,8 @@ def main():
                 raise ValueError(tag)
             if tag.endswith('lastchanged'):
                 raise ValueError(tag)
+    else:
+        args['--tag'] = {}
 
     if args.get('analyze') and args.get('--repo'):
         albumin.core.repo_analyze(
