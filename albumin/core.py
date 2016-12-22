@@ -14,10 +14,39 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from datetime import datetime
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
+from albumin.hooks import git_hooks
+
+
+def init(repo, exec_path):
+    for hook in git_hooks:
+        path = os.path.join(repo.path, 'hooks', hook)
+
+        if os.path.exists(path) and hook != 'pre-commit':
+            print('Repo already has hooks:')
+            raise RuntimeError(hook)
+
+        elif hook == 'pre-commit':
+            with open(path) as file:
+                content = file.readlines()
+
+            if content != [
+                '#!/bin/sh\n',
+                '# automatically configured by git-annex\n',
+                'git annex pre-commit .\n',
+            ]:
+                print('Unexcpected pre-commit hook:')
+                raise RuntimeError(content)
+            else:
+                os.remove(path)
+
+    for hook in git_hooks:
+        path = os.path.join(repo.path, 'hooks', hook)
+        os.symlink(exec_path, path)
 
 
 def import_(repo, path, **tags):

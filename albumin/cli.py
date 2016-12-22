@@ -20,10 +20,12 @@
 Albumin. Manages photographs using a git-annex repository.
 
 Usage:
+    albumin init [--repo=<repo>]
     albumin analyze [<path>] [--repo=<repo>] [--timezone=<tz>]
     albumin import <path> [--repo=<repo>] [--timezone=<tz>] [--tag=<tag>:<value>]...
 
 Actions:
+    init                    Initialize the repo and set up git hooks
     analyze                 Analyze files in the repo's staging area
     analyze <path>          Analyze the files at <path>
     import <path>           Import files from <path>
@@ -65,7 +67,12 @@ def main():
         except ValueError:
             if args.get('import'):
                 raise
-            args['--repo'] = None
+            elif args.get('init'):
+                args['--repo'] = AlbuminRepo(
+                    args['--repo'], create=True
+                )
+            else:
+                args['--repo'] = None
 
     if args.get('--timezone'):
         args['--timezone'] = pytz.timezone(args['--timezone'])
@@ -84,6 +91,12 @@ def main():
         albumin.core.repo_analyze(
             repo=args['--repo'],
             path=args['<path>'],
+        )
+
+    elif args.get('init'):
+        albumin.core.init(
+            repo=args['--repo'],
+            exec_path=sys.argv[0]
         )
 
     elif args.get('analyze'):
