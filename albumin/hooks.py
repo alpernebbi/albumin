@@ -18,7 +18,7 @@ import os
 import pytz
 
 from albumin.repo import AlbuminRepo
-from albumin.report import Report
+from albumin.imdate import Report
 
 
 def pre_commit_hook(args):

@@ -24,7 +24,7 @@ from git_annex_adapter import GitAnnex
 from git_annex_adapter import GitAnnexMetadata
 from albumin.imdate import analyze_date
 from albumin.imdate import ImageDate
-from albumin.report import Report
+from albumin.imdate import Report
 from albumin.utils import files_in
 
 
