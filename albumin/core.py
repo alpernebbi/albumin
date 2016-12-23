@@ -65,6 +65,11 @@ def import_(repo, path, **tags):
     print(commit_msg)
 
 
+def fix(repo):
+    diff_stats = repo.fix_filenames()
+    print(diff_stats)
+
+
 def repo_analyze(repo, path=None):
     report = repo.analyze(path=path)
     print(report)

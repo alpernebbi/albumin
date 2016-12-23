@@ -23,12 +23,14 @@ Usage:
     albumin init [--repo=<repo>]
     albumin analyze [<path>] [--repo=<repo>] [--timezone=<tz>]
     albumin import <path> [--repo=<repo>] [--timezone=<tz>] [--tag=<tag>:<value>]...
+    albumin fix [--repo=<repo>]
 
 Actions:
     init                    Initialize the repo and set up git hooks
     analyze                 Analyze files in the repo's staging area
     analyze <path>          Analyze the files at <path>
     import <path>           Import files from <path>
+    fix                     Fix the filenames of all images
 
 Options:
     --repo=<repo>           Git-annex repository to use. [default: .]
@@ -65,7 +67,7 @@ def main():
         try:
             args['--repo'] = AlbuminRepo(args['--repo'])
         except ValueError:
-            if args.get('import'):
+            if args.get('import') or args.get('fix'):
                 raise
             elif args.get('init'):
                 args['--repo'] = AlbuminRepo(
@@ -112,6 +114,11 @@ def main():
             repo=args['--repo'],
             path=args['<path>'],
             **args['--tag']
+        )
+
+    elif args.get('fix'):
+        albumin.core.fix(
+            repo=args['--repo']
         )
 
 if __name__ == "__main__":

@@ -218,6 +218,17 @@ class AlbuminRepo(pygit2.Repository):
         self.annex.fix()
         self.index.read()
 
+    def fix_filenames(self):
+        self.index.read()
+        files = (i.path for i in self.index)
+        files = {f: self.annex.lookupkey(f) for f in files}
+        self.arrange_by_imdates(files)
+
+        diff = self.diff('HEAD', cached=True)
+        if len(diff) > 0:
+            self.commit('Fix filenames')
+        return diff.stats.format(pygit2.GIT_DIFF_STATS_FULL, 80)
+
     def commit(self, message, timestamp=None):
         if not timestamp:
             timestamp = datetime.now(pytz.utc)
