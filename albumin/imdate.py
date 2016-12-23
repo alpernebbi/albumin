@@ -21,6 +21,8 @@ from exiftool import ExifTool
 from datetime import datetime
 from collections import OrderedDict
 
+from albumin.lexical_ordering import lexical_ordering
+
 
 def analyze_date(*file_paths, timezone=None):
     results = from_exif(*file_paths)
@@ -33,6 +35,7 @@ def analyze_date(*file_paths, timezone=None):
     return Report(file_paths, results, remaining)
 
 
+@lexical_ordering
 class ImageDate:
     methods = [
         'ManualTrusted',
@@ -91,27 +94,26 @@ class ImageDate:
         else:
             self.datetime = tz.localize(self.datetime)
 
-    @property
-    def order(self):
-        return ImageDate.methods.index(self.method)
+    def lexical_key(self):
+        return -ImageDate.methods.index(self.method)
 
     def __lt__(self, other):
-        return self.order > other.order if other else False
+        return False if other is None else NotImplemented
 
     def __gt__(self, other):
-        return self.order < other.order if other else True
+        return True if other is None else NotImplemented
 
     def __eq__(self, other):
-        return self.order == other.order if other else False
+        return False if other is None else NotImplemented
 
     def __ne__(self, other):
-        return self.order != other.order if other else True
+        return True if other is None else NotImplemented
 
     def __le__(self, other):
-        return self.order >= other.order if other else False
+        return False if other is None else NotImplemented
 
     def __ge__(self, other):
-        return self.order <= other.order if other else True
+        return True if other is None else NotImplemented
 
     def __repr__(self):
         repr_ = "ImageDate(method={!r}, datetime={!r})"
