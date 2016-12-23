@@ -15,7 +15,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from datetime import datetime
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
@@ -50,21 +49,19 @@ def init(repo, exec_path):
 
 
 def import_(repo, path, **tags):
-    batch, report = repo.import_(path, **tags)
-    timestamp = datetime.strptime(batch, '%Y%m%dT%H%M%SZ')
+    report = repo.import_(path, **tags)
 
     def commit_msg():
-        yield 'Batch: {}'.format(batch)
+        yield 'Import {}'.format(path)
         yield ''
         yield '[tags]'
-        yield 'batch: {}'.format(batch)
         yield from ('{}: {}'.format(t, v) for t, v in tags.items())
         yield ''
         yield '[report]'
         yield from report.short()
 
     commit_msg = '\n'.join(commit_msg())
-    repo.commit(commit_msg, timestamp=timestamp)
+    repo.commit(commit_msg)
     print(commit_msg)
 
 

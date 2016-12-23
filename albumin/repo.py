@@ -94,8 +94,8 @@ class AlbuminRepo(pygit2.Repository):
         for _, key in report.files.items():
             self.annex[key].update(tags)
 
-        batch = self.arrange_by_imdates(files=files)
-        return batch, report
+        self.arrange_by_imdates(files=files)
+        return report
 
     def analyze(self, path=None):
         files = {f: self.annex.calckey(f) for f in files_in(path)}
@@ -165,13 +165,9 @@ class AlbuminRepo(pygit2.Repository):
         idx.path = dst
         self.index.add(idx)
 
-    def arrange_by_imdates(self, files=None, imdates=None, batch=None):
+    def arrange_by_imdates(self, files=None, imdates=None):
         if not imdates:
             imdates = {}
-
-        if not batch:
-            timestamp = datetime.now(pytz.utc)
-            batch = '{:%Y%m%dT%H%M%SZ}'.format(timestamp)
 
         def datetime_name(key):
             imdate = imdates.get(key, self.annex[key].imdate)
@@ -194,7 +190,7 @@ class AlbuminRepo(pygit2.Repository):
 
         self.index.read()
         for file, key in files.items():
-            name_fmt = os.path.join(batch, datetime_name(key))
+            name_fmt = datetime_name(key)
 
             for i in range(0, 100):
                 if move_file(file, key, name_fmt.format(i)):
@@ -217,7 +213,6 @@ class AlbuminRepo(pygit2.Repository):
         self.checkout_index()
         self.annex.fix()
         self.index.read()
-        return batch
 
     def commit(self, message, timestamp=None):
         if not timestamp:

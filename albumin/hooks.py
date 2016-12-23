@@ -58,12 +58,11 @@ def pre_commit_hook(args):
         if key in updates
     }
 
-    batch = repo.arrange_by_imdates(imdates=file_data)
+    repo.arrange_by_imdates(imdates=file_data)
     repo.annex.pre_commit()
 
     msg_path = os.path.join(repo.path, 'albumin.msg')
     with open(msg_path, 'w') as msg_file:
-        print('[{}]'.format(batch), file=msg_file)
         print(*report.short(), sep='\n', file=msg_file)
 
 
@@ -76,7 +75,6 @@ def prepare_commit_msg_hook(args):
     msg_path = os.path.join(repo.path, 'albumin.msg')
 
     with open(msg_path, 'r') as msg_file:
-        batch = msg_file.readline().strip().strip('[]')
         report = [line.strip() for line in msg_file]
 
     if args['<commit_type>'] == 'message':
@@ -85,14 +83,13 @@ def prepare_commit_msg_hook(args):
             title = "\n".join(message)
 
     elif not args['<commit_type>']:
-        title = 'Batch: {}'.format(batch)
+        title = ''
 
     def new_message():
         yield title
         yield ''
         yield '# Tags to be applied'
         yield '[tags]'
-        yield 'batch: {}'.format(batch)
         yield ''
         yield '# Albumin report'
         yield '[report]'
