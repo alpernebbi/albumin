@@ -20,10 +20,10 @@
 Albumin. Manages photographs using a git-annex repository.
 
 Usage:
-    albumin init [--repo=<repo>]
-    albumin analyze [<path>] [--repo=<repo>] [--timezone=<tz>]
-    albumin import <path> [--repo=<repo>] [--timezone=<tz>] [--tag=<tag>:<value>]...
-    albumin fix [--repo=<repo>]
+    albumin init [-r=<repo>]
+    albumin analyze [<path>] [-r=<repo>] [-T=<tz>]
+    albumin import <path> [-r=<repo>] [-T=<tz>] [-t=<tag>:<value>]...
+    albumin fix [-r=<repo>]
 
 Actions:
     init                    Initialize the repo and set up git hooks
@@ -33,9 +33,9 @@ Actions:
     fix                     Fix the filenames of all images
 
 Options:
-    --repo=<repo>           Git-annex repository to use. [default: .]
-    --timezone=<tz>         Timezone to assume pictures are in.
-    --tag=<tag>:<value>     Tags to add to all imported files.
+    -r, --repo=<repo>         Git-annex repository to use. [default: .]
+    -T, --timezone=<tz>       Timezone to assume pictures are in.
+    -t, --tag=<tag>:<value>   Tags to add to all imported files.
 
 """
 
