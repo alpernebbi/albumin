@@ -193,7 +193,11 @@ class AlbuminRepo(pygit2.Repository):
             name_fmt = datetime_name(key)
 
             for i in range(0, 100):
-                if move_file(file, key, name_fmt.format(i)):
+                dest = name_fmt.format(i)
+
+                if file == dest:
+                    break
+                elif move_file(file, key, dest):
                     moved_files.append(file)
                     break
             else:
