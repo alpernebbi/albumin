@@ -67,6 +67,10 @@ def uninit(repo, exec_path):
 
 
 def import_(repo, path, **tags):
+    if not repo.in_master_branch():
+        print("Not in master branch.")
+        return
+
     report = repo.import_(path, **tags)
 
     def commit_msg():

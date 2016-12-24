@@ -29,6 +29,10 @@ def pre_commit_hook(args):
     repo = current_repo()
     new_files = repo.new_files()
 
+    if not repo.in_master_branch():
+        print("Not in master branch.")
+        return 4
+
     try:
         timezone = repo.timezone
     except pytz.exceptions.UnknownTimeZoneError as err:
