@@ -14,6 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import functools
+
+lex_docs = {
+    '__lt__': """Return a < b. Generated from lexical_key().""",
+    '__le__': """Return a <= b. Generated from lexical_key().""",
+    '__gt__': """Return a > b. Generated from lexical_key().""",
+    '__ge__': """Return a >= b. Generated from lexical_key().""",
+    '__eq__': """Return a == b. Generated from lexical_key().""",
+    '__ne__': """Return a != b. Generated from lexical_key().""",
+}
+
 
 def lexical_ordering(cls):
     """
@@ -22,83 +33,22 @@ def lexical_ordering(cls):
     """
     if not getattr(cls, 'lexical_key', None):
         raise ValueError('must define lexical_key()')
-
-    setattr(cls, '__lt__', lex_lt_wrapper(getattr(cls, '__lt__', None)))
-    setattr(cls, '__le__', lex_le_wrapper(getattr(cls, '__le__', None)))
-    setattr(cls, '__gt__', lex_gt_wrapper(getattr(cls, '__gt__', None)))
-    setattr(cls, '__ge__', lex_ge_wrapper(getattr(cls, '__ge__', None)))
-    setattr(cls, '__eq__', lex_eq_wrapper(getattr(cls, '__eq__', None)))
-    setattr(cls, '__ne__', lex_ne_wrapper(getattr(cls, '__ne__', None)))
+    for op in lex_docs:
+        setattr(cls, op, lex_wrapper(op, getattr(cls, op, None)))
     return cls
 
 
-def lex_lt_wrapper(original=None):
-    def __lt__(self, other):
-        """Return a < b. Generated from lexical_key()."""
+def lex_wrapper(operator, original=None):
+    @functools.wraps(original)
+    def func(self, other):
         if hasattr(other, 'lexical_key'):
-            return self.lexical_key() <= other.lexical_key()
-        elif original:
+            key = self.lexical_key()
+            op = getattr(key, operator, None)
+            retval = op(other.lexical_key()) if op else NotImplemented
+            if retval is not NotImplemented:
+                return retval
+        if original:
             return original(self, other)
-        else:
-            return NotImplemented
-    return __lt__
-
-
-def lex_le_wrapper(original=None):
-    def __le__(self, other):
-        """Return a <= b. Generated from lexical_key()."""
-        if hasattr(other, 'lexical_key'):
-            return self.lexical_key() <= other.lexical_key()
-        elif original:
-            return original(self, other)
-        else:
-            return NotImplemented
-    return __le__
-
-
-def lex_gt_wrapper(original=None):
-    def __gt__(self, other):
-        """Return a > b. Generated from lexical_key()."""
-        if hasattr(other, 'lexical_key'):
-            return self.lexical_key() > other.lexical_key()
-        elif original:
-            return original(self, other)
-        else:
-            return NotImplemented
-    return __gt__
-
-
-def lex_ge_wrapper(original=None):
-    def __ge__(self, other):
-        """Return a >= b. Generated from lexical_key()."""
-        if hasattr(other, 'lexical_key'):
-            return self.lexical_key() >= other.lexical_key()
-        elif original:
-            return original(self, other)
-        else:
-            return NotImplemented
-    return __ge__
-
-
-def lex_eq_wrapper(original=None):
-    def __eq__(self, other):
-        """Return a == b. Generated from lexical_key()."""
-        if hasattr(other, 'lexical_key'):
-            return self.lexical_key() == other.lexical_key()
-        elif original:
-            return original(self, other)
-        else:
-            return NotImplemented
-    return __eq__
-
-
-def lex_ne_wrapper(original=None):
-    def __ne__(self, other):
-        """Return a != b. Generated from lexical_key()."""
-        if hasattr(other, 'lexical_key'):
-            return self.lexical_key() != other.lexical_key()
-        elif original:
-            return original(self, other)
-        else:
-            return NotImplemented
-    return __ne__
+        return NotImplemented
+    func.__doc__ = lex_docs[operator]
+    return func
