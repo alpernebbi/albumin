@@ -25,27 +25,33 @@ def init(repo, exec_path):
     for hook in git_hooks:
         path = os.path.join(repo.path, 'hooks', hook)
 
-        if os.path.exists(path) and hook != 'pre-commit':
-            print('Repo already has hooks:')
-            raise RuntimeError(hook)
+        if os.path.exists(path):
+            if os.path.samefile(path, exec_path):
+                continue
 
-        elif hook == 'pre-commit':
-            with open(path) as file:
-                content = file.readlines()
+            elif hook != 'pre-commit':
+                print('Repo already has hook: {}'.format(hook))
+                return
 
-            if content != [
-                '#!/bin/sh\n',
-                '# automatically configured by git-annex\n',
-                'git annex pre-commit .\n',
-            ]:
-                print('Unexcpected pre-commit hook:')
-                raise RuntimeError(content)
             else:
-                os.remove(path)
+                with open(path) as file:
+                    content = file.readlines()
+
+                if content != [
+                    '#!/bin/sh\n',
+                    '# automatically configured by git-annex\n',
+                    'git annex pre-commit .\n',
+                ]:
+                    print('Unexcpected pre-commit hook:')
+                    print(*content, sep='')
+                    return
+                else:
+                    os.remove(path)
 
     for hook in git_hooks:
         path = os.path.join(repo.path, 'hooks', hook)
-        os.symlink(exec_path, path)
+        if not os.path.exists(path):
+            os.symlink(exec_path, path)
 
 
 def uninit(repo, exec_path):
