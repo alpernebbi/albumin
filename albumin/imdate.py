@@ -24,47 +24,48 @@ from collections import OrderedDict
 from albumin.lexical_ordering import lexical_ordering
 
 
-def analyze_date(*file_paths, timezone=None):
-    results = from_exif(*file_paths)
-    remaining = {f for f in file_paths if f not in results}
+def analyze_date(*paths, timezone=None):
+    results = from_exif(*paths)
+    remaining = {f for f in paths if f not in results}
 
-    if timezone:
-        for imdate in results.values():
+    for imdate in results.values():
+        if timezone and not imdate.timezone:
             imdate.timezone = timezone
 
-    return Report(file_paths, results, remaining)
+    return Report(paths, results, remaining)
 
 
-def from_exif(*file_paths):
-    if not file_paths:
+def from_exif(*paths):
+    if not paths:
         return {}
 
     exiftool_tags = [
         'EXIF:DateTimeOriginal',
-        'EXIF:CreateDate']
+        'EXIF:CreateDate',
+    ]
 
     with ExifTool() as tool:
         try:
-            tags_list = tool.get_tags_batch(exiftool_tags, file_paths)
+            tags_list = tool.get_tags_batch(exiftool_tags, paths)
         except:
             tags_list = []
-            for file in file_paths:
+            for file in paths:
                 try:
                     tags = tool.get_tags(exiftool_tags, file)
                     tags_list.append(tags)
                 except:
                     pass
 
-    data = {}
+    imdates = {}
     for tags in tags_list:
         file = tags['SourceFile']
         for tag, dt in tags.items():
             try:
-                datum = ImageDate(tag, dt)
-                data[file] = max(data.get(file), datum)
+                imdate = ImageDate(tag, dt)
+                imdates[file] = max(imdates.get(file), imdate)
             except ValueError:
                 continue
-    return data
+    return imdates
 
 
 @lexical_ordering
