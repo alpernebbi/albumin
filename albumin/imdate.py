@@ -35,6 +35,38 @@ def analyze_date(*file_paths, timezone=None):
     return Report(file_paths, results, remaining)
 
 
+def from_exif(*file_paths):
+    if not file_paths:
+        return {}
+
+    exiftool_tags = [
+        'EXIF:DateTimeOriginal',
+        'EXIF:CreateDate']
+
+    with ExifTool() as tool:
+        try:
+            tags_list = tool.get_tags_batch(exiftool_tags, file_paths)
+        except:
+            tags_list = []
+            for file in file_paths:
+                try:
+                    tags = tool.get_tags(exiftool_tags, file)
+                    tags_list.append(tags)
+                except:
+                    pass
+
+    data = {}
+    for tags in tags_list:
+        file = tags['SourceFile']
+        for tag, dt in tags.items():
+            try:
+                datum = ImageDate(tag, dt)
+                data[file] = max(data.get(file), datum)
+            except ValueError:
+                continue
+    return data
+
+
 @lexical_ordering
 class ImageDate:
     methods = [
@@ -123,38 +155,6 @@ class ImageDate:
         return '{:%Y-%m-%d %H:%M:%S} @ ({}) ({})'.format(
             self.datetime, self.timezone, self.method
         )
-
-
-def from_exif(*file_paths):
-    if not file_paths:
-        return {}
-
-    exiftool_tags = [
-        'EXIF:DateTimeOriginal',
-        'EXIF:CreateDate']
-
-    with ExifTool() as tool:
-        try:
-            tags_list = tool.get_tags_batch(exiftool_tags, file_paths)
-        except:
-            tags_list = []
-            for file in file_paths:
-                try:
-                    tags = tool.get_tags(exiftool_tags, file)
-                    tags_list.append(tags)
-                except:
-                    pass
-
-    data = {}
-    for tags in tags_list:
-        file = tags['SourceFile']
-        for tag, dt in tags.items():
-            try:
-                datum = ImageDate(tag, dt)
-                data[file] = max(data.get(file), datum)
-            except ValueError:
-                continue
-    return data
 
 
 class Report(object):
