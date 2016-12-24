@@ -21,12 +21,14 @@ Albumin. Manages photographs using a git-annex repository.
 
 Usage:
     albumin init [-r=<repo>]
+    albumin uninit [-r=<repo>]
     albumin analyze [<path>] [-r=<repo>] [-T=<tz>]
     albumin import <path> [-r=<repo>] [-T=<tz>] [-t=<tag>:<value>]...
     albumin fix [-r=<repo>]
 
 Actions:
     init                    Initialize the repo and set up git hooks
+    uninit                  Remove albumin git hooks in the repo
     analyze                 Analyze files in the repo's staging area
     analyze <path>          Analyze the files at <path>
     import <path>           Import files from <path>
@@ -99,6 +101,12 @@ def main():
 
     elif args.get('init'):
         albumin.core.init(
+            repo=args['--repo'],
+            exec_path=sys.argv[0]
+        )
+
+    elif args.get('uninit'):
+        albumin.core.uninit(
             repo=args['--repo'],
             exec_path=sys.argv[0]
         )

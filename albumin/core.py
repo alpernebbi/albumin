@@ -48,6 +48,24 @@ def init(repo, exec_path):
         os.symlink(exec_path, path)
 
 
+def uninit(repo, exec_path):
+    default_pre_commit = (
+        '#!/bin/sh\n'
+        '# automatically configured by git-annex\n'
+        'git annex pre-commit .'
+    )
+
+    for hook in git_hooks:
+        path = os.path.join(repo.path, 'hooks', hook)
+
+        if os.path.exists(path) and os.path.samefile(path, exec_path):
+            os.remove(path)
+
+            if hook == 'pre-commit':
+                with open(path, 'w') as file:
+                    print(default_pre_commit, file=file)
+
+
 def import_(repo, path, **tags):
     report = repo.import_(path, **tags)
 
