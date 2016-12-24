@@ -173,6 +173,10 @@ def post_commit_hook(args):
     for _, key in report.files.items():
         repo.annex[key].update(tags)
 
+    msg_path = os.path.join(repo.path, 'albumin.msg')
+    if os.path.exists(msg_path):
+        os.remove(msg_path)
+
 
 def parse_commit_msg(msg=None):
     if not msg:
