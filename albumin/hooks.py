@@ -107,11 +107,9 @@ def prepare_commit_msg_hook(args):
     def new_message():
         yield title
         yield ''
-        yield '# Tags to be applied'
         yield '[tags]'
         yield from ('{}: {}'.format(t, v) for t, v in tags.items())
         yield ''
-        yield '# Albumin report'
         yield '[report]'
         yield from report
 
@@ -178,6 +176,18 @@ def commit_msg_hook(args):
             print('Tags can\'t end with lastchanged: {}'.format(tag))
             return 5
 
+    def new_message():
+        yield from head
+        yield ''
+        yield '[tags]'
+        yield from ('{}: {}'.format(t, v) for t, v in tags.items())
+        yield ''
+        yield '[report]'
+        yield from report.short()
+
+    with open(args['<editmsg>'], 'w') as editmsg:
+        print(*new_message(), sep='\n', file=editmsg)
+
 
 def post_commit_hook(args):
     """
@@ -203,6 +213,7 @@ def parse_commit_msg(msg=None):
     if msg is None:
         repo = current_repo()
         msg = repo.head.get_object().message.splitlines()
+    msg = [m for m in msg if not m.startswith('#')]
 
     msg_head = []
     for line in msg:
