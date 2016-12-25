@@ -88,6 +88,10 @@ def prepare_commit_msg_hook(args):
         with open(args['<editmsg>'], 'r') as editmsg:
             message = [line.strip() for line in editmsg]
 
+    elif args['<commit_type>'] == 'commit':
+        if args['<commit_sha>'] == 'HEAD':
+            message = repo.head.get_object().message.splitlines()
+
     elif not args['<commit_type>']:
         message = []
         tags = {}
@@ -157,7 +161,8 @@ def commit_msg_hook(args):
 
         for i in range(100):
             new_name = dt_name.format(i)
-            if new_files.get(new_name) == key:
+            if new_files.get(new_name) == key \
+                    or repo.annex.lookupkey(new_name) == key:
                 break
         else:
             print('Can\'t find {} with key:'.format(dt_name))
