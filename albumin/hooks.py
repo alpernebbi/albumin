@@ -87,16 +87,25 @@ def prepare_commit_msg_hook(args):
     if args['<commit_type>'] == 'message':
         with open(args['<editmsg>'], 'r') as editmsg:
             message = [line.strip() for line in editmsg]
-            title = "\n".join(message)
 
     elif not args['<commit_type>']:
-        title = ''
+        message = []
+        tags = {}
+
+    try:
+        head, tags, report_ = parse_commit_msg(message)
+        title = "\n".join(head)
+        report = list(report_.short()) + report
+    except:
+        title = "\n".join(message)
+        tags = {}
 
     def new_message():
         yield title
         yield ''
         yield '# Tags to be applied'
         yield '[tags]'
+        yield from ('{}: {}'.format(t, v) for t, v in tags.items())
         yield ''
         yield '# Albumin report'
         yield '[report]'
@@ -186,7 +195,7 @@ def post_commit_hook(args):
 
 
 def parse_commit_msg(msg=None):
-    if not msg:
+    if msg is None:
         repo = current_repo()
         msg = repo.head.get_object().message.splitlines()
 
