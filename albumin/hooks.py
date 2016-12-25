@@ -39,7 +39,7 @@ def pre_commit_hook(args):
         print("Invalid time zone: {}".format(err))
         return 1
 
-    if not timezone:
+    if new_files and not timezone:
         print("Please set albumin.timezone:")
         print("    $ git -c albumin.timezone=UTC commit ...")
         return 2
