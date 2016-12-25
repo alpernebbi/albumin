@@ -78,8 +78,11 @@ def prepare_commit_msg_hook(args):
     repo = current_repo()
     msg_path = os.path.join(repo.path, 'albumin.msg')
 
-    with open(msg_path, 'r') as msg_file:
-        report = [line.strip() for line in msg_file]
+    try:
+        with open(msg_path, 'r') as msg_file:
+            report = [line.strip() for line in msg_file]
+    except FileNotFoundError:
+        report = []
 
     if args['<commit_type>'] == 'message':
         with open(args['<editmsg>'], 'r') as editmsg:
