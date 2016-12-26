@@ -63,6 +63,7 @@ def from_exif(*paths):
         file = tags['SourceFile']
         for tag, dt in tags.items():
             try:
+                tag = 'ExifTool/' + tag.replace(':', '/')
                 imdate = ImageDate(tag, dt)
                 imdates[file] = max(imdates.get(file), imdate)
             except ValueError:
@@ -73,10 +74,12 @@ def from_exif(*paths):
 @lexical_ordering
 class ImageDate:
     methods = [
-        'ManualTrusted',
-        'DateTimeOriginal',
-        'CreateDate',
-        'ManualUntrusted'
+        'Manual/Trusted',
+        'ExifTool/EXIF/DateTimeOriginal',
+        'ExifTool/MakerNotes/DateTimeOriginal',
+        'ExifTool/EXIF/CreateDate',
+        'ExifTool/MakerNotes/CreateDate',
+        'Manual/Untrusted'
     ]
 
     datetime_formats = [
@@ -85,7 +88,7 @@ class ImageDate:
     ]
 
     def __init__(self, method, datetime_):
-        self.method = method.split(':')[-1]
+        self.method = method
         if self.method not in ImageDate.methods:
             raise ValueError(method)
 
