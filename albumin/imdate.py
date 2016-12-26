@@ -41,7 +41,9 @@ def from_exif(*paths):
 
     exiftool_tags = [
         'EXIF:DateTimeOriginal',
+        'MakerNotes:DateTimeOriginal',
         'EXIF:CreateDate',
+        'MakerNotes:CreateDate',
     ]
 
     with ExifTool() as tool:
