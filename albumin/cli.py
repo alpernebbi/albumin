@@ -22,7 +22,7 @@ Albumin. Manages photographs using a git-annex repository.
 Usage:
     albumin init [-r=<repo>]
     albumin uninit [-r=<repo>]
-    albumin analyze [<path>] [-r=<repo>] [-T=<tz>]
+    albumin analyze [<path>] [-s] [-r=<repo>] [-T=<tz>]
     albumin import <path> [-r=<repo>] [-T=<tz>] [-t=<tag>:<value>]...
     albumin fix [-r=<repo>]
 
@@ -38,6 +38,7 @@ Options:
     -r, --repo=<repo>         Git-annex repository to use. [default: .]
     -T, --timezone=<tz>       Timezone to assume pictures are in.
     -t, --tag=<tag>:<value>   Tags to add to all imported files.
+    -s, --short               Print analysis report in the short format
 
 """
 
@@ -97,6 +98,7 @@ def main():
         albumin.core.repo_analyze(
             repo=args['--repo'],
             path=args['<path>'],
+            short=args['--short'],
         )
 
     elif args.get('init'):
@@ -114,6 +116,7 @@ def main():
     elif args.get('analyze'):
         albumin.core.imdate_analyze(
             path=args['<path>'],
+            short=args['--short'],
             timezone=args['--timezone']
         )
 

@@ -98,11 +98,17 @@ def fix(repo):
     print(diff_stats)
 
 
-def repo_analyze(repo, path=None):
+def repo_analyze(repo, path=None, short=False):
     report = repo.analyze(path=path)
-    print(report)
+    if short:
+        print(*report.short(), sep='\n')
+    else:
+        print(report)
 
 
-def imdate_analyze(path, timezone=None):
+def imdate_analyze(path, timezone=None, short=False):
     report = analyze_date(*files_in(path), timezone=timezone)
-    print(report)
+    if short:
+        print(*report.short(), sep='\n')
+    else:
+        print(report)
