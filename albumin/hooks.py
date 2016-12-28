@@ -128,6 +128,10 @@ def commit_msg_hook(args):
         msg = (line.strip() for line in editmsg)
         msg = [line for line in msg if not line.startswith('#')]
 
+    if not msg:
+        print('Empty commit message.')
+        return 6
+
     head, tags, report = parse_commit_msg(msg)
 
     if report.remaining:
