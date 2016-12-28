@@ -176,7 +176,16 @@ class AlbuminRepo(pygit2.Repository):
             return '{:%Y%m%dT%H%M%SZ}{{:02}}{}'.format(utc, ext)
 
         def move_file(file, key, dest):
-            if not os.path.exists(self.abs_path(dest)):
+            if dest in self.index:
+                try:
+                    dest_data = str(self[self.index[dest].id].data)
+                    dest_key = dest_data.split('/')[-1]
+                    if dest_key == key:
+                        return dest
+                except:
+                    pass
+
+            elif not os.path.exists(self.abs_path(dest)):
                 self.index_move(file, dest)
                 return dest
 
