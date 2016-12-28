@@ -46,6 +46,8 @@ def from_exif(*paths):
         'EXIF:CreateDate',
         'MakerNotes:CreateDate',
         'QuickTime:MediaCreateDate',
+        'RIFF:DateCreated',
+        'RIFF:TimeCreated',
     ]
 
     with ExifTool() as tool:
@@ -59,6 +61,12 @@ def from_exif(*paths):
                     tags_list.append(tags)
                 except:
                     pass
+
+    for tags in tags_list:
+        if 'RIFF:DateCreated' in tags and 'RIFF:TimeCreated' in tags:
+            date = tags.pop('RIFF:DateCreated')
+            time = tags.pop('RIFF:TimeCreated')
+            tags['RIFF:DateTimeCreated'] = '{} {}'.format(date, time)
 
     imdates = {}
     for tags in tags_list:
@@ -83,6 +91,7 @@ class ImageDate:
         'ExifTool/EXIF/CreateDate',
         'ExifTool/MakerNotes/CreateDate',
         'ExifTool/QuickTime/MediaCreateDate',
+        'ExifTool/RIFF/DateTimeCreated',
         'Manual/Untrusted'
     ]
 
