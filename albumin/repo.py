@@ -169,10 +169,10 @@ class AlbuminRepo(pygit2.Repository):
         if not imdates:
             imdates = {}
 
-        def datetime_name(key):
+        def datetime_name(file, key):
             imdate = imdates.get(key, self.annex[key].imdate)
             utc = imdate.datetime.astimezone(pytz.utc)
-            ext = os.path.splitext(key)[1]
+            ext = os.path.splitext(file)[1]
             return '{:%Y%m%dT%H%M%SZ}{{:02}}{}'.format(utc, ext)
 
         def move_file(file, key, dest):
@@ -190,7 +190,7 @@ class AlbuminRepo(pygit2.Repository):
 
         self.index.read()
         for file, key in files.items():
-            name_fmt = datetime_name(key)
+            name_fmt = datetime_name(file, key)
 
             for i in range(0, 100):
                 dest = name_fmt.format(i)
