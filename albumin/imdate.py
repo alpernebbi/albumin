@@ -42,6 +42,7 @@ def from_exif(*paths):
     exiftool_tags = [
         'EXIF:DateTimeOriginal',
         'MakerNotes:DateTimeOriginal',
+        'RIFF:DateTimeOriginal',
         'EXIF:CreateDate',
         'MakerNotes:CreateDate',
         'QuickTime:MediaCreateDate',
@@ -78,6 +79,7 @@ class ImageDate:
         'Manual/Trusted',
         'ExifTool/EXIF/DateTimeOriginal',
         'ExifTool/MakerNotes/DateTimeOriginal',
+        'ExifTool/RIFF/DateTimeOriginal',
         'ExifTool/EXIF/CreateDate',
         'ExifTool/MakerNotes/CreateDate',
         'ExifTool/QuickTime/MediaCreateDate',
