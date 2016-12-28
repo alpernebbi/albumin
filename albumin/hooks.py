@@ -182,12 +182,14 @@ def commit_msg_hook(args):
 
     def new_message():
         yield from head
-        yield ''
-        yield '[tags]'
-        yield from ('{}: {}'.format(t, v) for t, v in tags.items())
-        yield ''
-        yield '[report]'
-        yield from report.short()
+        if tags:
+            yield ''
+            yield '[tags]'
+            yield from ('{}: {}'.format(t, v) for t, v in tags.items())
+        if report:
+            yield ''
+            yield '[report]'
+            yield from report.short()
 
     with open(args['<editmsg>'], 'w') as editmsg:
         print(*new_message(), sep='\n', file=editmsg)
