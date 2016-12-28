@@ -44,6 +44,7 @@ def from_exif(*paths):
         'MakerNotes:DateTimeOriginal',
         'EXIF:CreateDate',
         'MakerNotes:CreateDate',
+        'QuickTime:MediaCreateDate',
     ]
 
     with ExifTool() as tool:
@@ -79,6 +80,7 @@ class ImageDate:
         'ExifTool/MakerNotes/DateTimeOriginal',
         'ExifTool/EXIF/CreateDate',
         'ExifTool/MakerNotes/CreateDate',
+        'ExifTool/QuickTime/MediaCreateDate',
         'Manual/Untrusted'
     ]
 
