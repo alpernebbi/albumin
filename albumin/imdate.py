@@ -48,6 +48,7 @@ def from_exif(*paths):
         'QuickTime:MediaCreateDate',
         'RIFF:DateCreated',
         'RIFF:TimeCreated',
+        'File:Comment',
     ]
 
     with ExifTool() as tool:
@@ -67,6 +68,9 @@ def from_exif(*paths):
             date = tags.pop('RIFF:DateCreated')
             time = tags.pop('RIFF:TimeCreated')
             tags['RIFF:DateTimeCreated'] = '{} {}'.format(date, time)
+
+        if 'File:Comment' in tags:
+            tags['File:Comment'] = tags['File:Comment'][:28]
 
     imdates = {}
     for tags in tags_list:
@@ -92,6 +96,7 @@ class ImageDate:
         'ExifTool/MakerNotes/CreateDate',
         'ExifTool/QuickTime/MediaCreateDate',
         'ExifTool/RIFF/DateTimeCreated',
+        'ExifTool/File/Comment',
         'Manual/Untrusted'
     ]
 
@@ -100,6 +105,7 @@ class ImageDate:
         '%Y:%m:%d %H:%M:%S.%f',
         '%Y-%m-%d@%H-%M-%S',
         '%Y-%m-%d@%H-%M-%S.%f',
+        '\n\n\n%d/%m/%Y\n%H:%M:%S\nMode=',
     ]
 
     def __init__(self, method, datetime_):
