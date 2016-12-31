@@ -223,7 +223,7 @@ def parse_commit_msg(msg=None):
 
     msg_head = []
     for line in msg:
-        if line.startswith('['):
+        if line.startswith('[') and line.endswith(']'):
             break
         msg_head.append(line)
 
