@@ -178,9 +178,10 @@ class AlbuminRepo(pygit2.Repository):
         def move_file(file, key, dest):
             if dest in self.index:
                 try:
-                    dest_data = str(self[self.index[dest].id].data)
+                    dest_data = self[self.index[dest].id].data.decode()
                     dest_key = dest_data.split('/')[-1]
                     if dest_key == key:
+                        self.index.remove(file)
                         return dest
                 except:
                     pass
