@@ -98,8 +98,8 @@ class ImageDate:
     datetime_formats = [
         '%Y:%m:%d %H:%M:%S',
         '%Y:%m:%d %H:%M:%S.%f',
-        '%Y-%m-%d@%H-%M-%S'
-        '%Y-%m-%d@%H-%M-%S.%f'
+        '%Y-%m-%d@%H-%M-%S',
+        '%Y-%m-%d@%H-%M-%S.%f',
     ]
 
     def __init__(self, method, datetime_):
