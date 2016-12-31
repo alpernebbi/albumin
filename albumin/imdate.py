@@ -24,8 +24,8 @@ from collections import OrderedDict
 from albumin.lexical_ordering import lexical_ordering
 
 
-def analyze_date(*paths, timezone=None):
-    results = from_exif(*paths)
+def analyze_date(*paths, timezone=None, mtime=False):
+    results = from_exif(*paths, mtime=mtime)
     remaining = {f for f in paths if f not in results}
 
     for imdate in results.values():
@@ -35,7 +35,7 @@ def analyze_date(*paths, timezone=None):
     return Report(paths, results, remaining)
 
 
-def from_exif(*paths):
+def from_exif(*paths, mtime=False):
     if not paths:
         return {}
 
@@ -50,6 +50,9 @@ def from_exif(*paths):
         'RIFF:TimeCreated',
         'File:Comment',
     ]
+
+    if mtime:
+        exiftool_tags.append('File:FileModifyDate')
 
     with ExifTool() as tool:
         try:
@@ -71,6 +74,10 @@ def from_exif(*paths):
 
         if 'File:Comment' in tags:
             tags['File:Comment'] = tags['File:Comment'][:28]
+
+        if mtime and 'File:FileModifyDate' in tags:
+            tags['File:FileModifyDate'] = \
+                tags['File:FileModifyDate'][:19]
 
     imdates = {}
     for tags in tags_list:

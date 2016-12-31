@@ -22,8 +22,8 @@ Albumin. Manages photographs using a git-annex repository.
 Usage:
     albumin init [-r=<repo>]
     albumin uninit [-r=<repo>]
-    albumin analyze [<path>] [-s] [-r=<repo>] [-T=<tz>]
-    albumin import <path> [-r=<repo>] [-T=<tz>] [-t=<tag>:<value>]...
+    albumin analyze [<path>] [-s] [-m] [-r=<repo>] [-T=<tz>]
+    albumin import <path> [-m] [-r=<repo>] [-T=<tz>] [-t=<tag>:<value>]...
     albumin fix [-r=<repo>]
 
 Actions:
@@ -39,6 +39,7 @@ Options:
     -T, --timezone=<tz>       Timezone to assume pictures are in.
     -t, --tag=<tag>:<value>   Tags to add to all imported files.
     -s, --short               Print analysis report in the short format
+    -m, --mtime               Use file modify time as a valid image date
 
 """
 
@@ -99,6 +100,7 @@ def main():
             repo=args['--repo'],
             path=args['<path>'],
             short=args['--short'],
+            mtime=args['--mtime'],
         )
 
     elif args.get('init'):
@@ -117,14 +119,16 @@ def main():
         albumin.core.imdate_analyze(
             path=args['<path>'],
             short=args['--short'],
-            timezone=args['--timezone']
+            timezone=args['--timezone'],
+            mtime=args['--mtime'],
         )
 
     elif args.get('import'):
         albumin.core.import_(
             repo=args['--repo'],
             path=args['<path>'],
-            **args['--tag']
+            mtime=args['--mtime'],
+            **args['--tag'],
         )
 
     elif args.get('fix'):

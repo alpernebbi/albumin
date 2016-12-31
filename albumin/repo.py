@@ -78,10 +78,11 @@ class AlbuminRepo(pygit2.Repository):
 
         self._session_timezone = tz
 
-    def import_(self, path, **tags):
+    def import_(self, path, mtime=False, **tags):
         files = self.annex.import_(path)
         report = self.imdate_diff(
-            {self.abs_path(f): k for f, k in files.items()}
+            files={self.abs_path(f): k for f, k in files.items()},
+            mtime=mtime,
         )
 
         if report.remaining:
@@ -97,17 +98,17 @@ class AlbuminRepo(pygit2.Repository):
         self.arrange_by_imdates(files=files)
         return report
 
-    def analyze(self, path=None):
+    def analyze(self, path=None, mtime=False):
         files = {f: self.annex.calckey(f) for f in files_in(path)}
-        return self.imdate_diff(files)
+        return self.imdate_diff(files, mtime=mtime)
 
-    def imdate_diff(self, files=None):
+    def imdate_diff(self, files=None, mtime=False):
         if not files:
             files = self.new_files()
             files = {self.abs_path(f): k for f, k in files.items()}
 
         timezone = self.timezone
-        report = analyze_date(*files, timezone=timezone)
+        report = analyze_date(*files, timezone=timezone, mtime=mtime)
 
         for file in report.remaining:
             key = files[file]
