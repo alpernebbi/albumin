@@ -97,7 +97,8 @@ class ImageDate:
         'ExifTool/QuickTime/MediaCreateDate',
         'ExifTool/RIFF/DateTimeCreated',
         'ExifTool/File/Comment',
-        'Manual/Untrusted'
+        'Manual/Untrusted',
+        'ExifTool/File/FileModifyDate',
     ]
 
     datetime_formats = [
