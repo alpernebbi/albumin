@@ -30,9 +30,11 @@ def pre_commit_hook(args):
     new_files = repo.new_files()
 
     branch = repo.branch()
-    if branch != 'refs/heads/master':
-        print("Not in master branch.")
-        return 4
+    if not branch.startswith('refs/heads/') \
+            or branch[11:] == 'git-annex' \
+            or '/' in branch[11:]:
+        print(repo.annex.pre_commit())
+        return
 
     try:
         timezone = repo.timezone
@@ -87,6 +89,11 @@ def prepare_commit_msg_hook(args):
     repo = current_repo()
     msg_path = os.path.join(repo.path, 'albumin.msg')
 
+    branch = repo.branch()
+    if branch.startswith('refs/heads/views/') \
+            or branch[11:] == 'git-annex':
+        return
+
     try:
         with open(msg_path, 'r') as msg_file:
             report = [line.strip() for line in msg_file]
@@ -134,6 +141,11 @@ def commit_msg_hook(args):
     Usage: commit-msg <editmsg>
     """
     repo = current_repo()
+
+    branch = repo.branch()
+    if branch.startswith('refs/heads/views/') \
+            or branch[11:] == 'git-annex':
+        return
 
     with open(args['<editmsg>'], 'r') as editmsg:
         msg = (line.strip() for line in editmsg)
@@ -212,6 +224,12 @@ def post_commit_hook(args):
     Usage: post-commit
     """
     repo = current_repo()
+
+    branch = repo.branch()
+    if branch.startswith('refs/heads/views/') \
+            or branch[11:] == 'git-annex':
+        return
+
     msg_head, tags, report = parse_commit_msg()
 
     for _, (key, new_imdate) in report.additions.items():

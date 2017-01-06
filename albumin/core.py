@@ -80,8 +80,11 @@ def uninit(repo, exec_path):
 
 
 def import_(repo, path, mtime=False, **tags):
-    if repo.branch() != '/refs/heads/master':
-        print("Not in master branch.")
+    branch = repo.branch()
+    if not branch.startswith('refs/heads/') \
+            or branch[11:] == 'git-annex' \
+            or '/' in branch[11:]:
+        print("Can't import to ref: {}".format(branch))
         return
 
     report = repo.import_(path, mtime=False, **tags)
