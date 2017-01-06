@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import stat
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
@@ -70,6 +71,12 @@ def uninit(repo, exec_path):
             if hook == 'pre-commit':
                 with open(path, 'w') as file:
                     print(default_pre_commit, file=file)
+                os.chmod(
+                    path,
+                    stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+                    | stat.S_IWUSR | stat.S_IWGRP
+                    | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+                )
 
 
 def import_(repo, path, mtime=False, **tags):
