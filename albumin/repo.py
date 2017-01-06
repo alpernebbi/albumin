@@ -264,11 +264,12 @@ class AlbuminRepo(pygit2.Repository):
 
         return commit
 
-    def in_master_branch(self):
+    def branch(self):
         try:
-            return self.head.name == 'refs/heads/master'
+            return self.head.name
         except pygit2.GitError as err:
-            return "'refs/heads/master'" in err.args[0]
+            msg = err.args[0]
+            return msg.split('\'')[1]
 
     def abs_path(self, path):
         return os.path.join(self.workdir, path)

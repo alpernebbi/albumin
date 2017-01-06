@@ -80,7 +80,7 @@ def uninit(repo, exec_path):
 
 
 def import_(repo, path, mtime=False, **tags):
-    if not repo.in_master_branch():
+    if repo.branch() != '/refs/heads/master':
         print("Not in master branch.")
         return
 
