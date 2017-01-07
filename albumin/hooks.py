@@ -180,7 +180,7 @@ def commit_msg_hook(args):
         elif file in report.additions:
             _, imdate = report.additions[file]
         elif file in report.overwrites:
-            _, imdate, _ = report.overwrites[file][1]
+            _, imdate, _ = report.overwrites[file]
         else:
             print('Check file in report:')
             print(file, key, sep='\n')
