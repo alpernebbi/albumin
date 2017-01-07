@@ -27,6 +27,7 @@ def pre_commit_hook(args):
     Usage: pre-commit
     """
     repo = current_repo()
+    msg_path = os.path.join(repo.path, 'albumin.msg')
     new_files = repo.new_files()
 
     branch = repo.branch()
@@ -35,6 +36,16 @@ def pre_commit_hook(args):
             or '/' in branch[11:]:
         print(repo.annex.pre_commit())
         return
+
+    override = repo.get_config('albumin.override')
+    if override:
+        print('Overriding analysis with manual report.')
+        try:
+            with open(msg_path, 'r') as msg_file:
+                report_override = [line.strip() for line in msg_file]
+        except FileNotFoundError:
+            print('Manual report not found.')
+            return 4
 
     try:
         timezone = repo.timezone
@@ -51,6 +62,9 @@ def pre_commit_hook(args):
         files={repo.abs_path(f): k for f, k in new_files.items()},
         mtime=repo.get_config('albumin.use-mtime'),
     )
+
+    if override and report_override:
+        report = Report.parse(list(report.short()) + report_override)
 
     if report.remaining:
         print('Some files in report have no information:')
@@ -69,7 +83,6 @@ def pre_commit_hook(args):
     repo.arrange_by_imdates(imdates=file_data)
     repo.annex.pre_commit()
 
-    msg_path = os.path.join(repo.path, 'albumin.msg')
     with open(msg_path, 'w') as msg_file:
         print(*report.short(), sep='\n', file=msg_file)
 
