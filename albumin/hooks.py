@@ -47,16 +47,9 @@ def pre_commit_hook(args):
         print("    $ git -c albumin.timezone=UTC commit ...")
         return 2
 
-    mtime = repo.config_overrides().get('albumin.use-mtime')
-    if not mtime:
-        try:
-            mtime = repo.config['albumin.use-mtime']
-        except:
-            pass
-
     report = repo.imdate_diff(
         files={repo.abs_path(f): k for f, k in new_files.items()},
-        mtime=mtime,
+        mtime=repo.get_config('albumin.use-mtime'),
     )
 
     if report.remaining:

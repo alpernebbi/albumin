@@ -54,28 +54,22 @@ class AlbuminRepo(pygit2.Repository):
 
         self._session_timezone = None
 
+    def get_config(self, key):
+        value = self.config[key] if key in self.config else None
+        value = self.config_overrides().get(key, value)
+        return value
+
     @property
     def timezone(self):
         if self._session_timezone:
             return self._session_timezone
-
-        try:
-            tz = self.config['albumin.timezone']
-        except KeyError:
-            tz = None
-
-        try:
-            tz = self.config_overrides()['albumin.timezone']
-        except KeyError:
-            pass
-
+        tz = self.get_config('albumin.timezone')
         return pytz.timezone(tz) if tz else tz
 
     @timezone.setter
     def timezone(self, tz):
         if isinstance(tz, str):
             tz = pytz.timezone(tz)
-
         self._session_timezone = tz
 
     def import_(self, path, mtime=False, **tags):
