@@ -104,6 +104,7 @@ class ImageDate:
         'ExifTool/QuickTime/MediaCreateDate',
         'ExifTool/RIFF/DateTimeCreated',
         'ExifTool/File/Comment',
+        'Manual/Facebook',
         'Manual/Untrusted',
         'ExifTool/File/FileModifyDate',
     ]
