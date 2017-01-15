@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import re
 import pytz
 import itertools
 from functools import partial
@@ -28,6 +29,7 @@ from albumin.lexical_ordering import lexical_ordering
 def analyze_date(*paths, timezone=None, mtime=False):
     methods = [
         partial(from_exif, mtime=mtime),
+        from_filename,
     ]
 
     results = {}
@@ -102,6 +104,25 @@ def from_exif(*paths, mtime=False):
     return imdates
 
 
+def from_filename(*paths):
+    filename_formats = {
+        'I9100/IMG': re.compile('IMG_(\d{8}_\d{6})\..{3}'),
+        'I9100/VID': re.compile('VID_(\d{8}_\d{6})\..{3}'),
+    }
+
+    imdates = {}
+    for path in paths:
+        name = os.path.basename(path)
+        for method, regex in filename_formats.items():
+            try:
+                dt = regex.match(name).group(1)
+                imdate = ImageDate('Filename/' + method, dt)
+                imdates[path] = imdate
+            except (ValueError, IndexError, AttributeError):
+                continue
+    return imdates
+
+
 @lexical_ordering
 class ImageDate:
     methods = [
@@ -114,6 +135,8 @@ class ImageDate:
         'ExifTool/QuickTime/MediaCreateDate',
         'ExifTool/RIFF/DateTimeCreated',
         'ExifTool/File/Comment',
+        'Filename/I9100/IMG',
+        'Filename/I9100/VID',
         'Manual/Facebook',
         'Manual/Untrusted',
         'ExifTool/File/FileModifyDate',
@@ -125,6 +148,7 @@ class ImageDate:
         '%Y-%m-%d@%H-%M-%S',
         '%Y-%m-%d@%H-%M-%S.%f',
         '\n\n\n%d/%m/%Y\n%H:%M:%S\nMode=',
+        '%Y%m%d_%H%M%S',
     ]
 
     def __init__(self, method, datetime_):
