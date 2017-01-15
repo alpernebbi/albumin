@@ -60,6 +60,7 @@ def from_exif(*paths, mtime=False):
         'QuickTime:MediaCreateDate',
         'RIFF:DateCreated',
         'RIFF:TimeCreated',
+        'EXIF:ModifyDate',
         'File:Comment',
     ]
 
@@ -134,6 +135,7 @@ class ImageDate:
         'ExifTool/MakerNotes/CreateDate',
         'ExifTool/QuickTime/MediaCreateDate',
         'ExifTool/RIFF/DateTimeCreated',
+        'ExifTool/EXIF/ModifyDate',
         'ExifTool/File/Comment',
         'Filename/I9100/IMG',
         'Filename/I9100/VID',
