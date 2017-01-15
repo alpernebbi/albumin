@@ -17,6 +17,7 @@
 import os
 import pytz
 import itertools
+from functools import partial
 from exiftool import ExifTool
 from datetime import datetime
 from collections import OrderedDict
@@ -25,8 +26,17 @@ from albumin.lexical_ordering import lexical_ordering
 
 
 def analyze_date(*paths, timezone=None, mtime=False):
-    results = from_exif(*paths, mtime=mtime)
-    remaining = {f for f in paths if f not in results}
+    methods = [
+        partial(from_exif, mtime=mtime),
+    ]
+
+    results = {}
+    remaining = set(paths)
+
+    for method in methods:
+        new_results = method(*remaining)
+        remaining.difference_update(new_results)
+        results.update(new_results)
 
     for imdate in results.values():
         if timezone and not imdate.timezone:
