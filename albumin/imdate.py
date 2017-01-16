@@ -152,6 +152,7 @@ class ImageDate:
         '%Y-%m-%d@%H-%M-%S',
         '%Y-%m-%d@%H-%M-%S.%f',
         '\n\n\n%d/%m/%Y\n%H:%M:%S\nMode=',
+        '\n\n\n%d.%m.%Y\n%H.%M.%S\nMode=',
         '%Y%m%d_%H%M%S',
     ]
 
