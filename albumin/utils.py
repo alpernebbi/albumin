@@ -16,6 +16,18 @@
 
 import os
 import tarfile
+from exiftool import ExifTool
+
+
+def exiftool_tags(*paths):
+    with ExifTool() as tool:
+        tags_list = tool.get_tags_batch([], paths)
+
+    tags_dict = {}
+    for tags in tags_list:
+        file = tags.pop('SourceFile')
+        tags_dict[file] = tags
+    return tags_dict
 
 
 def files_in(dir_path, relative=False):

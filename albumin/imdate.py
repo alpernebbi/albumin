@@ -19,10 +19,10 @@ import re
 import pytz
 import itertools
 from functools import partial
-from exiftool import ExifTool
 from datetime import datetime
 from collections import OrderedDict
 
+from albumin.utils import exiftool_tags
 from albumin.lexical_ordering import lexical_ordering
 
 
@@ -51,7 +51,7 @@ def from_exif(*paths, mtime=False):
     if not paths:
         return {}
 
-    exiftool_tags = [
+    useful_tags = [
         'EXIF:DateTimeOriginal',
         'MakerNotes:DateTimeOriginal',
         'RIFF:DateTimeOriginal',
@@ -65,21 +65,12 @@ def from_exif(*paths, mtime=False):
     ]
 
     if mtime:
-        exiftool_tags.append('File:FileModifyDate')
+        useful_tags.append('File:FileModifyDate')
 
-    with ExifTool() as tool:
-        try:
-            tags_list = tool.get_tags_batch(exiftool_tags, paths)
-        except:
-            tags_list = []
-            for file in paths:
-                try:
-                    tags = tool.get_tags(exiftool_tags, file)
-                    tags_list.append(tags)
-                except:
-                    pass
+    tags_dict = exiftool_tags(*paths)
 
-    for tags in tags_list:
+    imdates = {}
+    for file, tags in tags_dict.items():
         if 'RIFF:DateCreated' in tags and 'RIFF:TimeCreated' in tags:
             date = tags.pop('RIFF:DateCreated')
             time = tags.pop('RIFF:TimeCreated')
@@ -92,10 +83,9 @@ def from_exif(*paths, mtime=False):
             tags['File:FileModifyDate'] = \
                 tags['File:FileModifyDate'][:19]
 
-    imdates = {}
-    for tags in tags_list:
-        file = tags['SourceFile']
         for tag, dt in tags.items():
+            if tag not in useful_tags:
+                continue
             try:
                 tag = 'ExifTool/' + tag.replace(':', '/')
                 imdate = ImageDate(tag, dt)
