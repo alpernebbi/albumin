@@ -107,6 +107,7 @@ def from_exif(*paths, mtime=False):
 
 def from_filename(*paths):
     filename_formats = {
+        'UNIX': re.compile('(\d{9,13})\..{3}'),
         'I9100/IMG': re.compile('IMG_(\d{8}_\d{6})\..{3}'),
         'I9100/VID': re.compile('VID_(\d{8}_\d{6})\..{3}'),
     }
@@ -139,6 +140,7 @@ class ImageDate:
         'ExifTool/File/Comment',
         'Filename/I9100/IMG',
         'Filename/I9100/VID',
+        'Filename/UNIX',
         'Manual/Facebook',
         'Manual/Untrusted',
         'ExifTool/File/FileModifyDate',
@@ -160,15 +162,25 @@ class ImageDate:
 
         if isinstance(datetime_, datetime):
             self.datetime = datetime_
-        else:
-            for fmt_ in ImageDate.datetime_formats:
-                try:
-                    self.datetime = datetime.strptime(datetime_, fmt_)
-                    break
-                except (ValueError, TypeError):
-                    continue
-            else:
-                raise ValueError(datetime_)
+            return
+
+        for fmt_ in ImageDate.datetime_formats:
+            try:
+                self.datetime = datetime.strptime(datetime_, fmt_)
+                return
+            except (ValueError, TypeError):
+                continue
+
+        try:
+            timestamp = int(datetime_)
+            if timestamp > 10**10:
+                timestamp /= 1000
+            self.datetime = datetime.fromtimestamp(timestamp)
+            return
+        except (ValueError, OverflowError):
+            pass
+
+        raise ValueError(datetime_)
 
     @classmethod
     def parse(cls, imdate_str):
