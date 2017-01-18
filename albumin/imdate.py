@@ -97,9 +97,9 @@ def from_exif(*paths, mtime=False):
 
 def from_filename(*paths):
     filename_formats = {
-        'UNIX': re.compile('(\d{9,13})\..{3}'),
-        'I9100/IMG': re.compile('IMG_(\d{8}_\d{6})\..{3}'),
-        'I9100/VID': re.compile('VID_(\d{8}_\d{6})\..{3}'),
+        'UNIX': re.compile('(\d{9,13})'),
+        'I9100/IMG': re.compile('IMG_(\d{8}_\d{6})'),
+        'I9100/VID': re.compile('VID_(\d{8}_\d{6})'),
     }
 
     imdates = {}
