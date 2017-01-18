@@ -405,6 +405,13 @@ class Report(object):
 
             yield '  ' + line[5:]
 
+        yield ''
+        yield '{} files:'.format(len(self.files))
+        yield '  {} remaining'.format(len(self.remaining))
+        yield '  {} overwrites'.format(len(self.overwrites))
+        yield '  {} additions'.format(len(self.additions))
+        yield '  {} redundants'.format(len(self.redundants))
+
     def __str__(self):
         return "\n".join(self.long())
 
