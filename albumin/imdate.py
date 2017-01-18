@@ -100,6 +100,7 @@ def from_filename(*paths):
         'UNIX': re.compile('(\d{9,13})'),
         'I9100/IMG': re.compile('IMG_(\d{8}_\d{6})'),
         'I9100/VID': re.compile('VID_(\d{8}_\d{6})'),
+        'Delimited': re.compile('(\d{4}(?:.\d\d){5})'),
     }
 
     imdates = {}
@@ -130,6 +131,7 @@ class ImageDate:
         'ExifTool/File/Comment',
         'Filename/I9100/IMG',
         'Filename/I9100/VID',
+        'Filename/Delimited',
         'Filename/UNIX',
         'Manual/Facebook',
         'Manual/Untrusted',
@@ -144,6 +146,7 @@ class ImageDate:
         '\n\n\n%d/%m/%Y\n%H:%M:%S\nMode=',
         '\n\n\n%d.%m.%Y\n%H.%M.%S\nMode=',
         '%Y%m%d_%H%M%S',
+        '%Y-%m-%d %H-%M-%S',
     ]
 
     def __init__(self, method, datetime_):
