@@ -24,7 +24,7 @@ Usage:
     albumin uninit [-r=<repo>]
     albumin analyze [<path>] [-s] [-m] [-r=<repo>] [-T=<tz>]
     albumin import <path> [-m] [-r=<repo>] [-T=<tz>] [-t=<tag>:<value>]...
-    albumin fix [-r=<repo>]
+    albumin fix [<path>] [-r=<repo>]
 
 Actions:
     init                    Initialize the repo and set up git hooks
@@ -33,6 +33,7 @@ Actions:
     analyze <path>          Analyze the files at <path>
     import <path>           Import files from <path>
     fix                     Fix the filenames of all images
+    fix <path>              Fix the filenames of images in <path>
 
 Options:
     -r, --repo=<repo>         Git-annex repository to use. [default: .]
@@ -133,7 +134,8 @@ def main():
 
     elif args.get('fix'):
         albumin.core.fix(
-            repo=args['--repo']
+            repo=args['--repo'],
+            path=args['<path>'],
         )
 
 if __name__ == "__main__":

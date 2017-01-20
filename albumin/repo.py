@@ -166,6 +166,8 @@ class AlbuminRepo(pygit2.Repository):
 
         def datetime_name(file, key):
             imdate = imdates.get(key, self.annex[key].imdate)
+            if not imdate:
+                return None
             utc = imdate.datetime.astimezone(pytz.utc)
             ext = os.path.splitext(file)[1]
             return '{:%Y%m%dT%H%M%SZ}{{:02}}{}'.format(utc, ext)
@@ -196,6 +198,8 @@ class AlbuminRepo(pygit2.Repository):
         self.index.read()
         for file, key in files.items():
             name_fmt = datetime_name(file, key)
+            if not name_fmt:
+                continue
 
             for i in range(0, 100):
                 dest = name_fmt.format(i)
@@ -223,9 +227,10 @@ class AlbuminRepo(pygit2.Repository):
         self.annex.fix()
         self.index.read()
 
-    def fix_filenames(self):
-        self.index.read()
-        files = (i.path for i in self.index)
+    def fix_filenames(self, files=None):
+        if not files:
+            self.index.read()
+            files = (i.path for i in self.index)
         files = {f: self.annex.lookupkey(f) for f in files}
         self.arrange_by_imdates(files)
 

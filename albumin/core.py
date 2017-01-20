@@ -103,8 +103,10 @@ def import_(repo, path, mtime=False, **tags):
     print(commit_msg)
 
 
-def fix(repo):
-    diff_stats = repo.fix_filenames()
+def fix(repo, path=None):
+    diff_stats = repo.fix_filenames(
+        files=map(repo.rel_path, files_in(path)) if path else None,
+    )
     print(diff_stats)
 
 
