@@ -19,6 +19,7 @@ import stat
 
 from albumin.utils import files_in
 from albumin.imdate import analyze_date
+from albumin.imdate import Report
 from albumin.hooks import git_hooks
 
 
@@ -108,6 +109,13 @@ def fix(repo, path=None):
         files=map(repo.rel_path, files_in(path)) if path else None,
     )
     print(diff_stats)
+
+
+def apply(repo, path, **tags):
+    with open(path, 'r') as file:
+        report_msg = [line.strip() for line in file]
+    report = Report.parse(report_msg)
+    repo.apply_report(report, **tags)
 
 
 def repo_analyze(repo, path=None, short=False, mtime=False):
