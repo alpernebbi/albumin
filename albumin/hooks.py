@@ -237,13 +237,7 @@ def post_commit_hook(args):
         return
 
     msg_head, tags, report = parse_commit_msg()
-
-    for _, (key, new_imdate) in report.additions.items():
-        repo.annex[key].imdate = new_imdate
-    for _, (key, new_imdate, _) in report.overwrites.items():
-        repo.annex[key].imdate = new_imdate
-    for _, key in report.files.items():
-        repo.annex[key].update(tags)
+    repo.apply_report(report, **tags)
 
     msg_path = os.path.join(repo.path, 'albumin.msg')
     if os.path.exists(msg_path):

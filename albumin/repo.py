@@ -137,6 +137,14 @@ class AlbuminRepo(pygit2.Repository):
 
         return Report(files, updates, report.remaining)
 
+    def apply_report(self, report, **tags):
+        for _, (key, new_imdate) in report.additions.items():
+            self.annex[key].imdate = new_imdate
+        for _, (key, new_imdate, _) in report.overwrites.items():
+            self.annex[key].imdate = new_imdate
+        for _, key in report.files.items():
+            self.annex[key].update(tags)
+
     def new_files(self, keys=True):
         self.index.read()
         try:
