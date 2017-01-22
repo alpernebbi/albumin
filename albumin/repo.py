@@ -232,7 +232,7 @@ class AlbuminRepo(pygit2.Repository):
                 pass
 
         self.checkout_index()
-        self.annex.fix()
+        self.annex.pre_commit()
         self.index.read()
 
     def fix_filenames(self, files=None):
