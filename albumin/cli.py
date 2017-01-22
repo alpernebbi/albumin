@@ -99,6 +99,9 @@ def main():
     else:
         args['--tag'] = {}
 
+    if args.get('<path>'):
+        args['<path>'] = os.path.realpath(args['<path>'])
+
     if args.get('analyze') and args.get('--repo'):
         albumin.core.repo_analyze(
             repo=args['--repo'],
