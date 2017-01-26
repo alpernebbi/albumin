@@ -25,7 +25,7 @@ Usage:
     albumin analyze [<path>] [-s] [-m] [-r=<repo>] [-T=<tz>]
     albumin import <path> [-m] [-r=<repo>] [-T=<tz>] [-t=<tag>:<value>]...
     albumin fix [<path>] [-r=<repo>]
-    albumin apply <path> [-r=<repo>] [-t=<tag>:<value>]...
+    albumin apply [<path>] [-r=<repo>] [-t=<tag>:<value>]...
 
 Actions:
     init                    Initialize the repo and set up git hooks
@@ -35,6 +35,7 @@ Actions:
     import <path>           Import files from <path>
     fix                     Fix the filenames of all images
     fix <path>              Fix the filenames of images in <path>
+    apply                   Apply the analysis from stdin to metadata
     apply <path>            Apply the analysis report to metadata
 
 Options:

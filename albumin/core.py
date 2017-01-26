@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import stat
 
 from albumin.utils import files_in
@@ -111,9 +112,12 @@ def fix(repo, path=None):
     print(diff_stats)
 
 
-def apply(repo, path, **tags):
-    with open(path, 'r') as file:
-        report_msg = [line.strip() for line in file]
+def apply(repo, path=None, **tags):
+    if path:
+        with open(path, 'r') as file:
+            report_msg = [line.strip() for line in file]
+    else:
+        report_msg = [line.strip() for line in sys.stdin]
     report = Report.parse(report_msg)
     repo.apply_report(report, **tags)
 
