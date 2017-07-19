@@ -21,7 +21,7 @@ script to partially automate it.
 Requirements
 ------------
 - Python 3
-- git-annex-adapter_
+- git-annex-adapter_ (v0.1.0)
 - pyexiftool_
 - pytz
 - pygit2
